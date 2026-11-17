@@ -1,0 +1,125 @@
+/* Plataforma de juegos: una portada sobria con una tarjeta por juego.
+   Cada tarjeta lleva el color de su juego, para reconocerlo antes de entrar. */
+:root {
+  --bg: #F4F3F7;
+  --surface: #FFFFFF;
+  --ink: #18171F;
+  --muted: #5A5866;
+  --line: #DAD8E2;
+  --bucle: #3A38CF;
+  --lab: #5E2750;
+  --proto: #00696B;
+  --f-display: "Bricolage Grotesque", "Figtree", system-ui, sans-serif;
+  --f-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-code: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121118;
+    --surface: #1C1B24;
+    --ink: #EDECF3;
+    --muted: #ADAABC;
+    --line: #34323F;
+    --bucle: #A3A2FF;
+    --lab: #E0A6CF;
+    --proto: #4CDADA;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 17px;
+  line-height: 1.5;
+}
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--bucle); outline-offset: 3px; }
+
+.top, main, .pie { max-width: 980px; margin: 0 auto; padding: 0 16px; }
+.top { padding-top: 40px; padding-bottom: 8px; }
+.eyebrow {
+  margin: 0 0 8px;
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+h1 {
+  font-family: var(--f-display);
+  font-weight: 800;
+  font-size: clamp(2.2rem, 7vw, 3.6rem);
+  line-height: 1;
+  letter-spacing: -.03em;
+  margin: 0 0 12px;
+  text-wrap: balance;
+}
+.intro { margin: 0; max-width: 56ch; color: var(--muted); font-size: 1.1rem; }
+
+main { display: flex; flex-direction: column; gap: 24px; padding-top: 24px; padding-bottom: 32px; }
+
+.resumen { display: flex; flex-wrap: wrap; gap: 10px; }
+.dato {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: .92rem;
+  font-variant-numeric: tabular-nums;
+}
+.dato b { font-family: var(--f-display); font-size: 1.05rem; }
+
+.juegos { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.juego {
+  --c: var(--bucle);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-top: 8px solid var(--c);
+  border-radius: 18px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.juego.lab { --c: var(--lab); }
+.juego.proto { --c: var(--proto); }
+.materia { margin: 0; font-size: .8rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--c); }
+.juego h2 { font-family: var(--f-display); font-size: 1.6rem; line-height: 1.1; letter-spacing: -.02em; margin: 0; }
+.muestra {
+  font-family: var(--f-code);
+  font-size: .82rem;
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin: 0;
+  color: var(--muted);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.juego p.desc { margin: 0; color: var(--muted); }
+.cifras { display: flex; gap: 16px; font-size: .9rem; color: var(--muted); flex-wrap: wrap; }
+.cifras b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.avance { display: grid; gap: 6px; font-size: .88rem; }
+.barra { height: 8px; border-radius: 99px; background: var(--bg); overflow: hidden; }
+.barra i { display: block; height: 100%; background: var(--c); border-radius: 99px; }
+.jugar {
+  margin-top: auto;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 48px;
+  padding: 12px 20px;
+  border-radius: 14px;
+  background: var(--c);
+  color: var(--surface);
+  font-weight: 700;
+  text-decoration: none;
+}
+.jugar:hover { filter: brightness(1.1); }
+
+.nota { margin: 0; color: var(--muted); font-size: .9rem; max-width: 70ch; }
+.pie { padding-bottom: 32px; color: var(--muted); font-size: .85rem; border-top: 1px solid var(--line); }

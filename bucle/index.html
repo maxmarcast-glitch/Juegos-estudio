@@ -1,0 +1,1536 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bucle JS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Unbounded:wght@600;800&display=swap" rel="stylesheet">
+<style>
+/* Plan: una sola columna angosta, como una partida. Mapa de 3 niveles x 4 temas; cada tema = mini lección + 5 desafíos.
+   El código siempre va en un bloque oscuro tipo editor; el coral se reserva para la acción principal. */
+:root{
+  --bg:#EDEFFA; --surface:#FFFFFF; --surface-2:#DFE2F5; --ink:#1A1D3B; --muted:#565B82; --line:#CDD2EC;
+  --primary:#3A38CF; --on-primary:#FFFFFF; --accent:#E8502F; --on-accent:#FFFFFF;
+  --ok:#17794B; --ok-bg:#DDF3E7; --bad:#B93226; --bad-bg:#FBE3E0;
+  --code-bg:#161935; --code-ink:#E6E9FF; --code-k:#FF9B85; --code-s:#9BE3B8; --code-n:#FFD27A; --code-c:#8A90C2;
+  --f-display:"Unbounded","Albert Sans",system-ui,sans-serif;
+  --f-body:"Albert Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-code:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  --r:18px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1022; --surface:#181B36; --surface-2:#24284E; --ink:#ECEEFF; --muted:#A3A8D3; --line:#30355F;
+    --primary:#A3A2FF; --on-primary:#0E1022; --accent:#FF7F61; --on-accent:#2A0B03;
+    --ok:#73DBA6; --ok-bg:#12382A; --bad:#FF9F94; --bad-bg:#471A15;
+    --code-bg:#090B1A; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1022; --surface:#181B36; --surface-2:#24284E; --ink:#ECEEFF; --muted:#A3A8D3; --line:#30355F;
+  --primary:#A3A2FF; --on-primary:#0E1022; --accent:#FF7F61; --on-accent:#2A0B03;
+  --ok:#73DBA6; --ok-bg:#12382A; --bad:#FF9F94; --bad-bg:#471A15;
+  --code-bg:#090B1A; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.5}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.wrap{max-width:760px;margin:0 auto;padding:16px 16px 56px;display:flex;flex-direction:column;gap:20px}
+
+.bar-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.logo{font-family:var(--f-display);font-weight:800;font-size:1.3rem;letter-spacing:-.03em;margin:0}
+.logo i{font-style:normal;color:var(--accent)}
+.kpis{display:flex;gap:8px;flex-wrap:wrap}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:.88rem;font-weight:600;font-variant-numeric:tabular-nums}
+.kpi b{color:var(--primary)}
+
+.hero{background:var(--primary);color:var(--on-primary);border-radius:26px;padding:24px;display:grid;gap:20px;grid-template-columns:1fr}
+.hero h2{font-family:var(--f-display);font-weight:800;font-size:clamp(1.45rem,5.2vw,2.1rem);line-height:1.12;letter-spacing:-.03em;margin:0 0 10px;text-wrap:balance}
+.hero p{margin:0 0 16px;opacity:.92;max-width:44ch}
+.hero .code{margin:0;font-size:.82rem}
+.cta{display:flex;gap:10px;flex-wrap:wrap}
+@media (min-width:680px){.hero{grid-template-columns:1.25fr 1fr;align-items:center;padding:32px}}
+
+.btn{border:0;border-radius:14px;padding:13px 22px;min-height:48px;font-weight:700;background:var(--accent);color:var(--on-accent)}
+.btn.sec{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.btn.ghost{background:transparent;color:inherit;border:1.5px solid currentColor}
+.btn.link{background:none;color:var(--primary);padding:8px 4px;min-height:44px;text-decoration:underline;text-underline-offset:3px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+
+.nivel h3{font-family:var(--f-display);font-size:1.02rem;margin:0;letter-spacing:-.01em}
+.nivel-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.nivel-head span{color:var(--muted);font-size:.9rem}
+.temas{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(165px,1fr))}
+.tema{text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:6px;min-height:118px}
+.tema:hover{border-color:var(--primary)}
+.tema .num{font-family:var(--f-code);font-size:.78rem;color:var(--muted)}
+.tema .nom{font-weight:700;line-height:1.25}
+.tema .est{margin-top:auto;font-size:.85rem;color:var(--muted)}
+.tema .est b{color:var(--accent);letter-spacing:2px;font-size:1rem}
+.tema.sig{border:2px solid var(--accent)}
+.nota{color:var(--muted);font-size:.88rem;margin:0}
+.seccion{border-top:2px solid var(--ink);padding-top:14px;margin-top:8px}
+.seccion h2{font-family:var(--f-display);font-size:1.25rem;letter-spacing:-.02em;margin:0 0 4px}
+.seccion p{margin:0;color:var(--muted);font-size:.95rem;max-width:62ch}
+.puntos{margin:0;padding-left:20px;display:grid;gap:6px;font-size:.97rem;max-width:62ch}
+.traza{overflow-x:auto}
+.traza table{border-collapse:collapse;font-family:var(--f-code);font-size:.88rem;min-width:60%}
+.traza caption{caption-side:top;text-align:left;font-family:var(--f-body);font-size:.78rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);padding-bottom:6px}
+.traza th,.traza td{border:1px solid var(--line);padding:6px 12px;text-align:center;white-space:nowrap}
+.traza th{background:var(--surface-2);font-weight:600}
+.traza td.hueco{background:var(--accent);color:var(--on-accent);font-weight:700}
+
+.code{background:var(--code-bg);color:var(--code-ink);border-radius:14px;padding:14px 14px 14px 0;font-family:var(--f-code);font-size:.88rem;line-height:1.65;overflow-x:auto;margin:0;counter-reset:ln}
+.code span.l{display:block;white-space:pre;padding-right:14px}
+.code span.l::before{counter-increment:ln;content:counter(ln);display:inline-block;width:2.4em;margin-right:.9em;text-align:right;color:var(--code-c);user-select:none}
+.code .k{color:var(--code-k)} .code .s{color:var(--code-s)} .code .n{color:var(--code-n)} .code .c{color:var(--code-c);font-style:italic}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:20px;display:flex;flex-direction:column;gap:16px}
+.eyebrow{font-size:.78rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0}
+.card h2{font-family:var(--f-display);font-size:1.3rem;line-height:1.2;margin:0;letter-spacing:-.02em;text-wrap:balance}
+.card p{margin:0;max-width:62ch}
+.ojo{background:var(--surface-2);border-radius:12px;padding:12px 14px;font-size:.95rem}
+.ojo b{color:var(--accent)}
+.fila{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+
+.prog{height:8px;background:var(--surface-2);border-radius:99px;overflow:hidden;flex:1;min-width:120px}
+.prog i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.q{font-size:1.15rem;font-weight:700;line-height:1.3;margin:0}
+.ops{display:grid;gap:10px}
+.op{display:flex;gap:12px;align-items:flex-start;text-align:left;background:var(--bg);border:2px solid var(--line);border-radius:14px;padding:12px 14px;min-height:52px;width:100%}
+.op:hover:not([disabled]){border-color:var(--primary)}
+.op kbd{flex:none;font-family:var(--f-code);font-size:.78rem;border:1px solid var(--line);border-radius:6px;padding:1px 7px;color:var(--muted);margin-top:2px}
+.op span{white-space:pre-wrap;overflow-wrap:anywhere}
+.op.mono span{font-family:var(--f-code);font-size:.92rem}
+.op[disabled]{cursor:default;opacity:.65}
+.op.ok{border-color:var(--ok);background:var(--ok-bg);opacity:1}
+.op.mal{border-color:var(--bad);background:var(--bad-bg);opacity:1}
+.op .marca{margin-left:auto;font-weight:700;font-size:.85rem;white-space:nowrap}
+.op.ok .marca{color:var(--ok)} .op.mal .marca{color:var(--bad)}
+.pista{background:var(--surface-2);border-radius:12px;padding:10px 14px;font-size:.95rem}
+.fb{border-radius:14px;padding:14px 16px;border-left:5px solid var(--ok);background:var(--ok-bg)}
+.fb.mal{border-color:var(--bad);background:var(--bad-bg)}
+.fb strong{display:block;margin-bottom:4px}
+.fb p{font-size:.98rem}
+
+.resumen-n{font-family:var(--f-display);font-weight:800;font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums}
+.estrellas{color:var(--accent);font-size:1.8rem;letter-spacing:6px}
+.rep{margin:0;padding-left:20px;display:grid;gap:6px;font-size:.95rem}
+@media (prefers-reduced-motion:no-preference){
+  .prog i{transition:width .35s ease}
+  .fb{animation:sube .22s ease-out}
+  @keyframes sube{from{transform:translateY(6px);opacity:.4}to{transform:none;opacity:1}}
+}
+.volver{flex-basis:100%;font-weight:700;font-size:.9rem;color:var(--muted);text-decoration:none;padding:6px 0;min-height:32px}
+.volver:hover{color:var(--ink);text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+const FINAL = [
+{ id: 'u1', final: true, nombre: 'Unidad 1 · Algoritmos y pruebas de escritorio', desc: 'Algoritmos, pseudocódigo, PSeInt y trazas.', temas: [
+  { id: 'u1m', dif: 'Medio', n: 'Algoritmos y pseudocódigo',
+    idea: 'Un algoritmo es la especificación rigurosa de una secuencia de pasos para alcanzar un resultado en un tiempo finito. Tiene que ser preciso, definido y finito, y se piensa en tres partes: entrada, proceso y salida.',
+    puntos: [
+      'Precondición: lo que se sabe verdadero antes de empezar. Poscondición: lo que es verdadero al terminar, si se cumplieron las precondiciones.',
+      'Estructuras de control: secuencia, selección (Si), repetición (cantidad fija y conocida) e iteración (Mientras, depende de una condición).',
+      'Compilador: traduce el programa completo antes de ejecutarlo. Intérprete: traduce y ejecuta instrucción por instrucción.',
+      'Pseudocódigo: mezcla de lenguaje natural y programación. No es ejecutable y no depende de ningún lenguaje.'
+    ],
+    ojo: 'En el material, repetición e iteración no son lo mismo: en la repetición se sabe de antemano cuántas veces se ejecuta; en la iteración depende de una condición.',
+    qs: [
+      { t: 'concepto', q: '¿Cuál de estas es una característica que debe cumplir todo algoritmo?', o: ['Ser finito: tiene que terminar en algún momento', 'Estar escrito en un lenguaje de programación', 'Usar al menos una estructura repetitiva', 'Ejecutarse en una computadora'],
+        w: 'Un algoritmo debe ser preciso, definido y finito. No depende de un lenguaje ni de una computadora: una receta también es un algoritmo. Por eso "sumar todos los números naturales" no tiene algoritmo posible: nunca terminaría.',
+        h: 'Acordate del ejemplo de sumar todos los números naturales.' },
+      { t: 'concepto', q: 'Para el problema "retirar dinero de un cajero automático", ¿cuál de estas es una precondición?', o: ['Tener saldo suficiente en la cuenta', 'El saldo de la cuenta quedó actualizado', 'Se entregó el dinero en efectivo', 'La tarjeta fue devuelta al usuario'],
+        w: 'Una precondición es algo que ya es verdadero antes de comenzar el algoritmo. Las otras tres son poscondiciones: lo que queda verdadero cuando termina.',
+        h: '¿Cuál tiene que cumplirse antes de empezar?' },
+      { t: 'concepto', q: '¿En qué se diferencia un compilador de un intérprete?', o: ['El compilador traduce el programa completo; el intérprete traduce y ejecuta instrucción por instrucción', 'El compilador ejecuta línea por línea; el intérprete traduce todo junto', 'El compilador es para bajo nivel y el intérprete para pseudocódigo', 'No hay diferencia: son dos nombres para lo mismo'],
+        w: 'El compilador lee todo el programa y genera el código de máquina equivalente (C, C++, Pascal). El intérprete toma una instrucción, la traduce y la ejecuta en el momento (Python, PHP, JavaScript).',
+        h: 'Uno trabaja con el programa entero y el otro de a una instrucción.' },
+      { t: 'concepto', q: 'Hay que enviar un mensaje de texto a 30 amigos. ¿Qué estructura de control corresponde y por qué?', o: ['Repetición, porque la cantidad de veces se conoce de antemano', 'Iteración, porque depende de una condición que va cambiando', 'Selección, porque hay que elegir a cada amigo', 'Secuencia: se escriben las instrucciones 30 veces'],
+        w: 'Se sabe que son exactamente 30 veces, así que es una repetición (Repetir 30). La iteración se usa cuando no se conoce la cantidad y se corta por una condición, como "mientras la zanja no esté llena".',
+        h: '¿Se sabe de antemano cuántas veces hay que hacerlo?' },
+      { t: 'concepto', q: 'En "Mientras (la zanja no está llena) agregar una palada de tierra", ¿qué pasa si la zanja ya está llena al empezar?', o: ['El bloque no se ejecuta ninguna vez', 'Se ejecuta una vez y después se corta', 'Se repite sin parar', 'El algoritmo da error'],
+        w: 'Mientras evalúa la condición antes de entrar al bloque. Si ya es falsa, no entra nunca. Es la diferencia con Repetir... Hasta Que, que primero ejecuta y después evalúa, así que corre al menos una vez.',
+        h: '¿Mientras evalúa la condición antes o después de ejecutar el bloque?' },
+      { t: 'concepto', q: '¿En qué orden van las etapas del desarrollo de software?', o: ['Especificación, diseño, implementación, validación y mantenimiento', 'Implementación, diseño, especificación, validación y mantenimiento', 'Diseño, implementación, mantenimiento y validación', 'Especificación, implementación, diseño y validación'],
+        w: 'Primero se define con precisión el problema (especificación) y se diseña la solución. Después se escribe en un lenguaje (implementación), se prueba que cumpla lo especificado (validación) y se corrige y adapta con el tiempo (mantenimiento).',
+        h: 'No se puede programar lo que todavía no se definió.' }
+    ] },
+  { id: 'u1d', dif: 'Difícil', n: 'Pruebas de escritorio',
+    idea: 'Hacer una prueba de escritorio es convertirte en la computadora: ejecutás el algoritmo a mano, línea por línea, y anotás en una tabla cómo cambia cada variable. Sirve para entender la lógica y encontrar errores antes de programar.',
+    ej: `Definir i, m Como Entero;
+i = 1;
+Mientras i <= 3 Hacer
+    m = i * 3;
+    Escribir m;
+    i = i + 1;
+FinMientras`,
+    puntos: [
+      'La tabla lleva una columna por variable o condición y una fila por paso.',
+      'La asignación es destructiva: al guardar un valor nuevo, el anterior se pierde.',
+      'Traza: registro automático que deja un programa mientras se ejecuta (logs). La prueba de escritorio es manual.'
+    ],
+    ojo: 'El error más común es olvidarse de la última fila: la evaluación en la que la condición da falso y el bucle termina.',
+    qs: [
+      { t: 'traza', q: '¿Qué valor va en la celda marcada con "?"', c: `x = 5;
+y = 2;
+x = x + 3;
+y = x - y;
+Escribir "Resultado: ", y;`, tabla: { cols: ['Línea', 'x', 'y'], filas: [['x = 5', '5', ''], ['y = 2', '5', '2'], ['x = x + 3', '8', '2'], ['y = x - y', '8', '?']] },
+        o: ['6', '3', '10', '-6'],
+        w: 'y = x - y usa los valores actuales: x ya vale 8 (se le sumó 3 en la línea anterior) e y vale 2. Primero se calcula la derecha (8 - 2) y después se guarda el 6 en y.',
+        h: 'Usá el valor de x de la fila anterior, no el inicial.' },
+      { t: 'traza', q: '¿Cuántas veces se evalúa la condición i <= 3 en total?', c: `i = 1;
+Mientras i <= 3 Hacer
+    m = i * 3;
+    Escribir m;
+    i = i + 1;
+FinMientras`, o: ['4 veces', '3 veces', '2 veces', '5 veces'],
+        w: 'Tres veces da verdadero (con i = 1, 2 y 3) y una cuarta vez da falso (con i = 4), que es la que hace salir del bucle. Esa última evaluación también ocupa una fila en la tabla.',
+        h: 'Contá también la evaluación que da falso.' },
+      { t: 'traza', q: '¿Qué se muestra en pantalla?', c: `i = 1;
+Mientras i < 3 Hacer
+    m = i * 3;
+    Escribir m;
+    i = i + 1;
+FinMientras`, o: ['3\n6', '3\n6\n9', '3', '6\n9'],
+        w: 'Con i < 3 solo entra cuando i vale 1 y 2. Al llegar a 3 la condición es falsa. Cambiar <= por < saca una vuelta: es la comparación que se hizo en clase con la planilla.',
+        h: '¿Con i = 3 se cumple i < 3?' },
+      { t: 'traza', q: '¿Cuál es el último valor que se escribe?', c: `contador = 0;
+Repetir
+    contador = contador + 1;
+    Escribir contador;
+Hasta Que contador > 2`, o: ['3', '2', '1', '4'],
+        w: 'Repetir ejecuta primero y evalúa después, y termina cuando la condición es VERDADERA (al revés que Mientras). Escribe 1 (1 > 2 falso), 2 (2 > 2 falso) y 3 (3 > 2 verdadero, corta).',
+        h: 'Hasta Que corta cuando la condición se cumple, no cuando deja de cumplirse.' },
+      { t: 'traza', q: '¿Qué devuelve la llamada de la última fila?', c: `function pow(x, n) {
+  if (n == 1) {
+    return x;
+  } else {
+    return x * pow(x, n - 1);
+  }
+}
+console.log(pow(2, 3));`, tabla: { cols: ['x', 'n', 'n == 1', 'Devuelve'], filas: [['2', '3', 'false', '2 * pow(2, 2)'], ['2', '2', 'false', '2 * pow(2, 1)'], ['2', '1', 'true', '?']] },
+        o: ['2', '1', '8', '4'], x: `function pow(x,n){return n==1?x:x*pow(x,n-1)} console.log(pow(2,1))`,
+        w: 'Con n == 1 se llega al caso base, que devuelve x, o sea 2. Recién ahí se resuelve de atrás para adelante: 2 * 2 = 4 y 2 * 4 = 8.',
+        h: 'Es el caso base: mirá qué devuelve el if.' },
+      { t: 'concepto', q: '¿Cuál es la diferencia entre una prueba de escritorio y una traza?', o: ['La prueba de escritorio es manual; la traza es un registro automático que genera el programa al ejecutarse', 'La prueba de escritorio se hace en producción; la traza, al diseñar', 'Son lo mismo con distinto nombre', 'La traza se hace a mano y la prueba de escritorio la genera el programa'],
+        w: 'La prueba de escritorio es una simulación manual sobre un bloque chico, para entender la lógica y detectar errores temprano. La traza la genera el programa en ejecución (logs) y sirve para diagnosticar problemas y analizar rendimiento.',
+        h: 'Una la hacés vos con lápiz; la otra la deja el programa.' }
+    ] }
+] },
+{ id: 'u2', final: true, nombre: 'Unidad 2 · Introducción a JavaScript', desc: 'Características del lenguaje, tipos, operadores y control.', temas: [
+  { id: 'u2m', dif: 'Medio', n: 'Tipos de datos y operadores',
+    idea: 'JavaScript es un lenguaje de alto nivel, interpretado, dinámico y multiparadigma. Tiene siete tipos primitivos (string, number, boolean, null, undefined, symbol y bigint) y los objetos, que son tipos compuestos.',
+    ej: `let edad = 20;
+let tipo = edad >= 18 ? "mayor" : "menor";
+console.log(typeof edad, tipo); // number mayor`,
+    puntos: [
+      'Dinámico: el tipo de una variable se resuelve en ejecución y puede cambiar.',
+      'Sensible a mayúsculas: nombre y Nombre son dos identificadores distintos.',
+      '== compara solo el valor; === compara valor y tipo.'
+    ],
+    ojo: 'typeof null devuelve "object". Es un error histórico del lenguaje: null es un primitivo.',
+    qs: [
+      { t: 'concepto', q: '¿Qué significa que JavaScript sea un lenguaje "dinámico"?', o: ['Que los tipos se resuelven en ejecución: una variable puede guardar un número y después un texto', 'Que solo sirve para páginas con animaciones', 'Que se compila antes de ejecutarse', 'Que no tiene tipos de datos'],
+        w: 'Dinámico quiere decir que muchas decisiones se toman en tiempo de ejecución y no antes. Por eso no se declara el tipo de una variable y la misma variable puede cambiar de tipo.',
+        h: 'Pensá en qué momento se decide el tipo de una variable.' },
+      { t: 'salida', c: `console.log(typeof null, typeof undefined);`, o: ['object undefined', 'null undefined', 'object object', 'undefined undefined'],
+        w: 'typeof undefined da "undefined", como es de esperar. typeof null da "object" por un error histórico del lenguaje que nunca se corrigió: null sigue siendo un primitivo.',
+        h: 'Uno de los dos tiene un resultado que no es el esperado.' },
+      { t: 'salida', c: `let a = 5;
+let b = a++;
+console.log(a, b);`, o: ['6 5', '6 6', '5 5', '5 6'],
+        w: 'a++ es post-incremento: primero entrega el valor actual (5, que se guarda en b) y después suma 1 a la variable. Con ++a sería al revés y b valdría 6.',
+        h: 'El ++ está después de la variable.' },
+      { t: 'salida', c: `console.log(5 == "5", 5 === "5", 5 != "5");`, o: ['true false false', 'true false true', 'false false true', 'true true false'],
+        w: '== y != convierten tipos antes de comparar: 5 y "5" valen lo mismo, así que == da true y != da false. === compara también el tipo, y number no es string.',
+        h: '!= es el opuesto de ==, no de ===.' },
+      { t: 'concepto', q: '¿Cuál de estos NO es un tipo de dato primitivo en JavaScript?', o: ['Array', 'String', 'Boolean', 'Undefined'],
+        w: 'Los primitivos guardan un solo valor simple. Un Array es un objeto, es decir un tipo compuesto: guarda una colección de valores.',
+        h: 'Buscá el que puede contener varios valores.' },
+      { t: 'salida', c: `let precio = "100";
+let total = precio * 2 + "1";
+console.log(total, typeof total);`, o: ['2001 string', '201 number', '2001 number', '1001 string'],
+        w: 'El * solo sirve para números, así que convierte "100" a 100 y da 200. Después el + con un texto concatena: 200 + "1" es "2001", un string.',
+        h: 'El * convierte a número; el + con un texto pega.' }
+    ] },
+  { id: 'u2d', dif: 'Difícil', n: 'Estructuras de control',
+    idea: 'Las estructuras de control deciden qué se ejecuta y cuántas veces: if/else y switch para elegir un camino; for, while y do...while para repetir. Seguir el valor de cada variable vuelta por vuelta es la prueba de escritorio aplicada a JavaScript.',
+    ej: `let i = 0;
+do {
+  i++;
+} while (i < 3);
+console.log(i); // 3`,
+    puntos: [
+      'while evalúa antes de entrar; do...while ejecuta una vez y evalúa después.',
+      'Valores que cuentan como falso: 0, "", null, undefined, NaN y false.',
+      '&& se resuelve antes que ||.'
+    ],
+    ojo: 'En un switch, si falta el break la ejecución sigue de largo por los case de abajo.',
+    qs: [
+      { t: 'salida', c: `let dia = 2;
+switch (dia) {
+  case 1:
+    console.log("Lunes");
+  case 2:
+    console.log("Martes");
+  case 3:
+    console.log("Miércoles");
+    break;
+  default:
+    console.log("Otro");
+}`, o: ['Martes\nMiércoles', 'Martes', 'Martes\nMiércoles\nOtro', 'Lunes\nMartes\nMiércoles'],
+        w: 'El switch entra por case 2. Como ese case no tiene break, sigue de largo y ejecuta también el case 3. Ahí sí hay break y se corta antes del default.',
+        h: 'Fijate qué case tienen break y cuáles no.' },
+      { t: 'salida', c: `let n = 10;
+do {
+  console.log(n);
+  n++;
+} while (n < 5);`, o: ['10', 'No muestra nada', '10\n11', 'Se repite sin parar'],
+        w: 'do...while ejecuta el bloque una vez antes de mirar la condición. Muestra 10, n pasa a 11, y recién entonces evalúa 11 < 5, que es falso.',
+        h: '¿Cuándo se evalúa la condición en un do...while?' },
+      { t: 'salida', c: `let total = 0;
+for (let i = 1; i <= 3; i++) {
+  for (let j = 1; j <= 2; j++) {
+    total += i;
+  }
+}
+console.log(total);`, o: ['12', '6', '9', '18'],
+        w: 'Por cada valor de i, el for de adentro da 2 vueltas y suma i las dos veces: 1+1, 2+2 y 3+3. En total 2 + 4 + 6 = 12.',
+        h: 'El bucle de adentro se ejecuta completo en cada vuelta del de afuera.' },
+      { t: 'salida', c: `const valores = [0, "0", "", null, "hola"];
+let cuenta = 0;
+for (const v of valores) {
+  if (v) cuenta++;
+}
+console.log(cuenta);`, o: ['2', '1', '3', '4'],
+        w: 'Cuentan como falso el 0, el texto vacío y null. El "0" con comillas es un texto que no está vacío, así que cuenta como verdadero, igual que "hola".',
+        h: 'Mirá bien el segundo elemento: tiene comillas.' },
+      { t: 'salida', c: `let x = 7;
+if (x > 5 && x < 10 || x === 0) {
+  console.log("A");
+} else {
+  console.log("B");
+}
+console.log(!(x > 5));`, o: ['A\nfalse', 'B\nfalse', 'A\ntrue', 'B\ntrue'],
+        w: 'Primero se resuelve el &&: 7 > 5 y 7 < 10 da true. Con eso el || ya es true y entra al if. En la última línea, x > 5 es true y el ! lo invierte a false.',
+        h: 'Resolvé primero el && y después el ||.' },
+      { t: 'salida', q: 'Hacé la prueba de escritorio. ¿Qué muestra?', c: `let i = 10;
+let pasos = 0;
+while (i > 1) {
+  i = i % 2 === 0 ? i / 2 : i - 1;
+  pasos++;
+}
+console.log(pasos);`, o: ['4', '3', '5', '10'],
+        w: 'Si i es par se divide por 2; si es impar se le resta 1. La tabla queda: 10 → 5, 5 → 4, 4 → 2, 2 → 1. Son 4 pasos, y con i = 1 la condición ya es falsa.',
+        h: 'Armá una tabla con dos columnas: i y pasos.' }
+    ] }
+] },
+{ id: 'u3f', final: true, nombre: 'Unidad 3 · Funciones', desc: 'Tipos de funciones, scope, closures, callbacks y recursividad.', temas: [
+  { id: 'u3fm', dif: 'Medio', n: 'Funciones y scope',
+    idea: 'En JavaScript las funciones son ciudadanos de primera clase: se pueden asignar a una variable, pasar como argumento y devolver desde otra función. Parámetro es la variable que figura en la declaración; argumento es el valor que se pasa al llamarla.',
+    ej: `saludar("Ana"); // funciona: la declaración se procesa antes
+function saludar(nombre) {
+  console.log("Hola " + nombre);
+}`,
+    puntos: [
+      'Declaración de función: se puede usar antes de la línea donde está escrita. Expresión de función: existe recién cuando la ejecución llega a esa línea.',
+      'Hay scope global, de función y de bloque. var no respeta el bloque; let y const sí.',
+      'Scope léxico: el alcance de cada variable se determina leyendo el código, sin ejecutarlo.',
+      'Hoisting: las declaraciones con var se elevan al inicio; las asignaciones no.'
+    ],
+    ojo: 'Una variable local con el mismo nombre que una externa le hace sombra: dentro de la función se usa la local y la externa no se toca.',
+    qs: [
+      { t: 'concepto', q: '¿Por qué se dice que las funciones son "ciudadanos de primera clase"?', o: ['Porque se pueden asignar a variables, pasar como argumentos y devolver como resultado', 'Porque se ejecutan antes que el resto del código', 'Porque siempre tienen que devolver un valor', 'Porque no se pueden modificar una vez declaradas'],
+        w: 'En JavaScript una función es un valor más. Por eso se puede guardar en una variable, pasar a otra función (callback) y devolver desde una función (closure).',
+        h: 'Pensá qué se puede hacer con cualquier valor, como un número.' },
+      { t: 'concepto', q: 'Dada la declaración function area(base, altura) y la llamada area(5, 3):', o: ['base y altura son parámetros; 5 y 3 son argumentos', 'base y altura son argumentos; 5 y 3 son parámetros', 'Los cuatro son parámetros', 'Los cuatro son argumentos'],
+        w: 'Parámetro es el término para el momento de la declaración: la variable listada entre paréntesis. Argumento es el término para el momento de la llamada: el valor que se pasa.',
+        h: 'Uno pertenece a la declaración y el otro a la llamada.' },
+      { t: 'salida', q: '¿Qué pasa al ejecutar este código?', v: 'ERROR ReferenceError', c: `saludar();
+const saludar = function () {
+  console.log("Hola");
+};`, o: ['Da error: saludar todavía no existe cuando se la llama', 'Muestra Hola', 'Muestra undefined', 'No muestra nada'],
+        w: 'Es una expresión de función: se crea recién cuando la ejecución llega a esa línea. Llamarla antes da error. Si fuera una declaración (function saludar() {...}) funcionaría, porque las declaraciones se procesan antes de ejecutar el script.',
+        h: '¿Es una declaración de función o una expresión de función?' },
+      { t: 'salida', c: `function prueba() {
+  console.log(frase);
+  var frase = "Hola";
+}
+prueba();`, o: ['undefined', 'Hola', 'Da error: frase no está definida', 'null'],
+        w: 'Es el hoisting de var: la declaración se eleva al inicio de la función, pero la asignación se queda en su línea. Al mostrarla, la variable ya existe pero todavía no tiene valor.',
+        h: 'Con var, la declaración se eleva pero la asignación no.' },
+      { t: 'salida', c: `if (true) {
+  var a = 1;
+  let b = 2;
+}
+console.log(typeof a, typeof b);`, o: ['number undefined', 'number number', 'undefined undefined', 'undefined number'],
+        w: 'var no tiene alcance de bloque: su visibilidad atraviesa las llaves del if, así que a existe afuera. let sí respeta el bloque, y b deja de existir al cerrar la llave.',
+        h: 'Una de las dos formas de declarar no respeta las llaves.' },
+      { t: 'salida', c: `let nombreUsu = "Juan";
+function muestraMensaje() {
+  let nombreUsu = "Pedro";
+  console.log("Hola, " + nombreUsu);
+}
+muestraMensaje();
+console.log(nombreUsu);`, o: ['Hola, Pedro\nJuan', 'Hola, Pedro\nPedro', 'Hola, Juan\nJuan', 'Hola, Juan\nPedro'],
+        w: 'La variable local le hace sombra a la externa (ocultamiento o shadowing): dentro de la función se usa "Pedro". La externa no se modifica y sigue valiendo "Juan". Sin el let de adentro, sí se cambiaría la externa.',
+        h: 'Dentro de la función hay un let: es otra variable.' }
+    ] },
+  { id: 'u3fd', dif: 'Difícil', n: 'Closures, callbacks y recursividad',
+    idea: 'Un closure es una función que recuerda las variables del scope donde fue creada, aunque la función exterior ya haya terminado. Un callback es una función que se pasa como argumento para que otra la ejecute. Una función recursiva se llama a sí misma y necesita un caso base para terminar.',
+    ej: `function factorial(n) {
+  if (n === 1) return 1;        // caso base
+  return n * factorial(n - 1);  // llamada recursiva
+}
+console.log(factorial(4)); // 24`,
+    puntos: [
+      'Currying: una función recibe un argumento y devuelve otra función que recibe el siguiente.',
+      'Cada llamada recursiva guarda su contexto de ejecución en la pila. La cantidad de llamadas anidadas es la profundidad de recursión.',
+      'Función flecha con una sola expresión: el return es implícito.'
+    ],
+    ojo: 'Sin caso base, la recursión no termina nunca y desborda la pila de llamadas.',
+    qs: [
+      { t: 'salida', c: `function contador(incremento) {
+  let count = 0;
+  return function () {
+    count += incremento;
+    return count;
+  };
+}
+const deDos = contador(2);
+const deCinco = contador(5);
+deDos();
+console.log(deDos(), deCinco());`, o: ['4 5', '4 9', '2 5', '4 10'],
+        w: 'Cada llamada a contador crea su propio count y su propio incremento, y la función devuelta los recuerda (closure). deDos lleva 2 y después 4; deCinco tiene un count aparte y recién va por 5.',
+        h: 'deDos y deCinco no comparten la variable count.' },
+      { t: 'salida', c: `const multiplicar = a => b => c => a * b * c;
+console.log(multiplicar(2)(3)(4));`, o: ['24', '9', '234', 'Da error'],
+        w: 'Es currying: cada función recibe un solo argumento y devuelve otra función. multiplicar(2) devuelve una función que recuerda a = 2; esa recibe el 3, y la última recibe el 4 y calcula 2 * 3 * 4.',
+        h: 'Cada par de paréntesis llama a la función que devolvió el anterior.' },
+      { t: 'traza', q: '¿Cuántas veces se ejecuta factorial en total al calcular factorial(4)?', c: `function factorial(n) {
+  if (n === 1) return 1;
+  return n * factorial(n - 1);
+}
+console.log(factorial(4));`, o: ['4', '3', '5', '24'], x: `let k=0;function f(n){k++;return n===1?1:n*f(n-1)} f(4);console.log(k)`,
+        w: 'Se llama con 4, 3, 2 y 1. La de n = 1 es el caso base y ya no vuelve a llamar. Esas 4 llamadas anidadas son la profundidad de recursión; el resultado (24) se arma al volver: 2, 6, 24.',
+        h: 'Anotá el valor de n en cada llamada hasta llegar al caso base.' },
+      { t: 'salida', c: `function sumar(x, y) {
+  if (y === 0) return x;
+  return sumar(x + 1, y - 1);
+}
+console.log(sumar(3, 2));`, o: ['5', '6', '4', '3'],
+        w: 'En cada llamada se pasa una unidad de y a x: sumar(3, 2) → sumar(4, 1) → sumar(5, 0). Con y en 0 se llega al caso base y se devuelve x, que vale 5.',
+        h: 'Seguí los dos parámetros llamada por llamada.' },
+      { t: 'concepto', q: '¿Qué pasa si una función recursiva no tiene caso base?', o: ['Se llama a sí misma sin parar hasta desbordar la pila de llamadas', 'Devuelve undefined en la primera llamada', 'JavaScript le agrega un caso base automáticamente', 'Se ejecuta una sola vez'],
+        w: 'El caso base es la situación que se resuelve de forma directa, sin volver a llamar. Sin él, cada llamada genera otra y los contextos de ejecución se apilan hasta superar el límite del motor.',
+        h: '¿Qué es lo que hace que las llamadas dejen de apilarse?' },
+      { t: 'salida', c: `function saludar(nombre, termina) {
+  console.log("Hola, " + nombre);
+  termina();
+}
+saludar("Ana", () => {
+  console.log("La función terminó.");
+});
+console.log("Fin");`, o: ['Hola, Ana\nLa función terminó.\nFin', 'Hola, Ana\nFin\nLa función terminó.', 'Fin\nHola, Ana\nLa función terminó.', 'Hola, Ana\nFin'],
+        w: 'Un callback no es asíncrono por sí mismo. Acá saludar lo ejecuta en el momento, de forma síncrona, así que todo sale en el orden escrito. Lo asíncrono aparece cuando el callback se le entrega a algo como setTimeout o fetch.',
+        h: 'Acá no hay ningún temporizador ni pedido a un servidor.' }
+    ] }
+] },
+{ id: 'u3a', final: true, nombre: 'Unidad 3 · Asincronía', desc: 'Event Loop, callbacks, Promises y async/await.', temas: [
+  { id: 'u3am', dif: 'Medio', n: 'Asincronía: la teoría',
+    idea: 'JavaScript tiene un único hilo de ejecución (single thread): procesa una instrucción por vez. Para no bloquearse con tareas lentas, las delega al entorno (navegador o Node.js) y sigue con el resto. Cuando la tarea termina, su callback espera en una cola y el Event Loop lo pasa a ejecución cuando la pila de llamadas queda vacía.',
+    ej: `console.log("Inicio");
+setTimeout(() => {
+  console.log("Mensaje dentro del temporizador");
+}, 2000);
+console.log("Fin");
+// Inicio, Fin, Mensaje dentro del temporizador`,
+    puntos: [
+      'Síncrono: las sentencias se ejecutan una detrás de otra, en el orden escrito. Asíncrono: pueden ejecutarse en un orden distinto al del código.',
+      'Bloqueante: detiene el flujo hasta terminar. No bloqueante: devuelve el control enseguida y avisa después (callback, promesa).',
+      'Concurrencia: varias tareas se gestionan intercalándose. Paralelismo: se ejecutan a la vez en varios hilos o núcleos. JavaScript es concurrente, no paralelo.',
+      'Operaciones de CPU: internas y muy rápidas. Operaciones de I/O (red, disco, usuario): más lentas, dependen del exterior.',
+      'Promise: objeto que representa el resultado futuro de una operación asíncrona.'
+    ],
+    ojo: 'await no detiene todo el programa: pausa solo la función async que lo contiene.',
+    qs: [
+      { t: 'concepto', q: '¿Qué significa que JavaScript sea "single thread"?', o: ['Que tiene un único hilo de ejecución y procesa una instrucción por vez', 'Que solo puede correr un programa por computadora', 'Que no puede realizar tareas asíncronas', 'Que cada función corre en su propio hilo'],
+        w: 'Hay una sola secuencia de ejecución. Eso no le impide manejar tareas que tardan: las delega al entorno y sigue trabajando. Por eso es altamente concurrente aun con un solo hilo.',
+        h: 'Thread significa hilo.' },
+      { t: 'concepto', q: '¿Cuál es la tarea del Event Loop?', o: ['Pasar a ejecución los callbacks pendientes cuando la pila de llamadas queda vacía', 'Ejecutar varias funciones al mismo tiempo en distintos núcleos', 'Traducir el código JavaScript a código de máquina', 'Detener el programa hasta que termine cada tarea lenta'],
+        w: 'El Event Loop es un ciclo que está siempre atento: cuando una tarea delegada termina, su callback queda en la cola de tareas, y el Event Loop lo ejecuta cuando la pila principal (call stack) está vacía.',
+        h: 'Coordina cuándo se ejecuta lo que quedó pendiente.' },
+      { t: 'concepto', q: 'Estás cocinando y atendés el teléfono alternando entre las dos cosas. ¿Qué concepto ilustra y cómo se relaciona con JavaScript?', o: ['Concurrencia, que es el modelo de JavaScript con su Event Loop', 'Paralelismo, que es el modelo de JavaScript', 'Concurrencia, aunque JavaScript trabaja en paralelo', 'Bloqueo, que es el modelo de JavaScript'],
+        w: 'Alternar entre tareas sin hacerlas en el mismo instante es concurrencia. Paralelismo serían dos personas cocinando a la vez, y requiere varios hilos o núcleos. JavaScript es concurrente, no paralelo.',
+        h: '¿Las dos tareas ocurren en el mismo instante o se van intercalando?' },
+      { t: 'concepto', q: '¿Cuál de estas es una operación de entrada/salida (I/O)?', o: ['Pedir datos a un servidor con fetch', 'Sumar dos números', 'Ordenar un arreglo en memoria', 'Comparar dos valores'],
+        w: 'Las operaciones de I/O implican comunicarse con el exterior: red, disco, teclado, pantalla. Son más lentas y pueden bloquear si no se hacen de forma asíncrona. Las otras tres son operaciones de CPU, internas y muy rápidas.',
+        h: 'Buscá la que depende de algo externo al programa.' },
+      { t: 'concepto', q: '¿Cuáles son los tres estados en los que puede estar una Promise?', o: ['Pendiente, cumplida y rechazada', 'Iniciada, pausada y terminada', 'Síncrona, asíncrona y bloqueada', 'Abierta, cerrada y con error'],
+        w: 'Una Promise arranca pendiente. Si la operación sale bien se llama a resolve y pasa a cumplida (se atiende con .then); si falla se llama a reject y pasa a rechazada (se atiende con .catch).',
+        h: 'Uno es el estado inicial y los otros dos son los finales posibles.' },
+      { t: 'concepto', q: '¿Qué es el "callback hell"?', o: ['El anidamiento de muchos callbacks que dependen uno de otro y vuelve el código difícil de leer y mantener', 'Un error que aparece cuando un callback no recibe argumentos', 'El bloqueo del hilo principal por un callback lento', 'Usar callbacks dentro de una Promise'],
+        w: 'Aparece cuando varias operaciones asíncronas dependen una de otra y cada callback va adentro del anterior. Los callbacks no están mal; el problema es la legibilidad. Las Promises y async/await surgieron para ordenar eso.',
+        h: 'Acordate del ejemplo del pedido de comida: elegir, pedir, pagar, recibir.' }
+    ] },
+  { id: 'u3ad', dif: 'Difícil', n: 'Asincronía: orden de ejecución',
+    idea: 'Para predecir la salida de un código asíncrono: primero corre todo el código síncrono, de arriba hacia abajo. Después se ejecutan las continuaciones de las promesas ya resueltas (los .then y lo que sigue a un await). Por último, los temporizadores, según su tiempo.',
+    ej: `let x = 1;
+setTimeout(function () {
+  x++;
+}, 3000);
+console.log(x); // 1: el incremento ocurre después`,
+    puntos: [
+      'Una función async siempre devuelve una Promise.',
+      'resolve indica éxito y reject indica error. Se atienden con .then() y .catch(), o con try/catch cuando se usa await.',
+      'fetch devuelve una Promise, y res.json() también: por eso van dos await.'
+    ],
+    ojo: 'Confundir la Promise con su resultado: const datos = obtenerDatos() guarda una Promise, no los datos. Falta el await.',
+    qs: [
+      { t: 'salida', c: `let x = 1;
+setTimeout(function () {
+  x = 3;
+  console.log(x);
+  x = 20;
+}, 100);
+setTimeout(function () {
+  x += 10;
+  console.log(x);
+}, 10);
+setTimeout(function () {
+  console.log(x);
+}, 1);`, o: ['1\n11\n3', '3\n11\n1', '1\n11\n21', '3\n30\n30'],
+        w: 'Los callbacks corren por orden de tiempo, no de escritura. Al milisegundo 1 se muestra x, que sigue en 1. A los 10 se le suman 10 y muestra 11. A los 100 se le asigna 3 y se muestra 3; el x = 20 ocurre después del console.log.',
+        h: 'Ordená los tres temporizadores por milisegundos y seguí el valor de x.' },
+      { t: 'salida', c: `console.log("Inicio");
+function dos() {
+  setTimeout(function () {
+    console.log("Dos");
+  }, 50);
+}
+function uno() {
+  setTimeout(function () {
+    console.log("Uno");
+  }, 20);
+  dos();
+  console.log("Tres");
+}
+uno();
+console.log("Fin");`, o: ['Inicio\nTres\nFin\nUno\nDos', 'Inicio\nUno\nDos\nTres\nFin', 'Inicio\nTres\nFin\nDos\nUno', 'Inicio\nUno\nTres\nDos\nFin'],
+        w: 'Primero sale todo lo síncrono: Inicio, después Tres (dentro de uno) y Fin. Los dos setTimeout solo dejaron sus callbacks pendientes. Cuando la pila queda vacía se ejecutan por tiempo: Uno a los 20 ms y Dos a los 50.',
+        h: 'Marcá primero todos los console.log que no están dentro de un setTimeout.' },
+      { t: 'salida', c: `setTimeout(() => console.log("A"), 0);
+Promise.resolve().then(() => console.log("B"));
+console.log("C");`, o: ['C\nB\nA', 'C\nA\nB', 'A\nB\nC', 'B\nC\nA'],
+        w: 'Primero el código síncrono: C. Después, las promesas tienen prioridad sobre los temporizadores: el .then se ejecuta antes que el callback de setTimeout, aunque el tiempo sea 0.',
+        h: 'Síncrono primero; entre promesa y temporizador, gana la promesa.' },
+      { t: 'salida', c: `function obtenerMensaje() {
+  return new Promise((resolve) => {
+    setTimeout(() => resolve("Mensaje recibido"), 30);
+  });
+}
+async function programa() {
+  console.log("1. Iniciando solicitud");
+  const mensaje = await obtenerMensaje();
+  console.log("2. " + mensaje);
+}
+programa();
+console.log("3. El resto sigue");`, o: ['1. Iniciando solicitud\n3. El resto sigue\n2. Mensaje recibido', '1. Iniciando solicitud\n2. Mensaje recibido\n3. El resto sigue', '3. El resto sigue\n1. Iniciando solicitud\n2. Mensaje recibido', '1. Iniciando solicitud\n3. El resto sigue'],
+        w: 'programa corre normalmente hasta el await. Ahí se pausa esa función (no todo el programa) y el control vuelve afuera, que muestra el 3. Cuando la Promise se resuelve, programa retoma y muestra el 2.',
+        h: 'await pausa solo la función async que lo contiene.' },
+      { t: 'salida', c: `const promesa = new Promise((resolve, reject) => {
+  const exito = false;
+  if (exito) {
+    resolve("Terminó bien");
+  } else {
+    reject("Falló");
+  }
+});
+promesa
+  .then(r => console.log("then: " + r))
+  .catch(e => console.log("catch: " + e));`, o: ['catch: Falló', 'then: Falló', 'then: Terminó bien', 'then: undefined\ncatch: Falló'],
+        w: 'Como exito es false se llama a reject, y la Promise queda rechazada. Una promesa rechazada saltea los .then y va directo al .catch, que recibe el valor pasado a reject.',
+        h: 'Fijate cuál de las dos funciones se llama: resolve o reject.' },
+      { t: 'salida', c: `async function cargar() {
+  try {
+    const dato = await Promise.reject("sin conexión");
+    console.log("Dato: " + dato);
+  } catch (error) {
+    console.log("Error: " + error);
+  }
+  console.log("Listo");
+}
+cargar();`, o: ['Error: sin conexión\nListo', 'Dato: sin conexión\nListo', 'Error: sin conexión', 'Listo'],
+        w: 'Con await, una Promise rechazada se comporta como un error lanzado: se corta el bloque try (no se muestra "Dato") y el control pasa al catch. Después del try/catch la función sigue y muestra "Listo".',
+        h: 'Si la promesa se rechaza, ¿qué bloque se ejecuta?' }
+    ] }
+] },
+{ id: 'u4', final: true, nombre: 'Unidad 4 · Arreglos', desc: 'Arreglos, matrices, métodos y ordenamiento.', temas: [
+  { id: 'u4m', dif: 'Medio', n: 'Arreglos y sus métodos',
+    idea: 'Un arreglo guarda varios valores bajo un mismo nombre, cada uno en una posición con índice desde 0. Un arreglo multidimensional (matriz) es un arreglo cuyos elementos son otros arreglos: se accede con dos índices, fila y columna.',
+    ej: `const matriz = [
+  [1, 2, 3],
+  [4, 5, 6]
+];
+console.log(matriz[1][0]); // 4: fila 1, columna 0`,
+    puntos: [
+      'Modifican el arreglo original: push, pop, shift, unshift, splice, sort y reverse.',
+      'Devuelven uno nuevo sin tocar el original: map, filter, slice, concat y el spread [...].',
+      'find devuelve el primer elemento que cumple (o undefined); filter devuelve un arreglo con todos los que cumplen.'
+    ],
+    ojo: 'sort() sin función de comparación ordena como texto: [10, 9, 1] queda [1, 10, 9].',
+    qs: [
+      { t: 'salida', c: `const m = [[1, 2], [3, 4], [5, 6]];
+console.log(m[2][0], m.length, m[0].length);`, o: ['5 3 2', '5 2 3', '3 3 2', '6 3 2'],
+        w: 'm[2] es la tercera fila, [5, 6], y su posición 0 es 5. m.length cuenta las filas (3) y m[0].length cuenta los elementos de una fila, o sea las columnas (2).',
+        h: 'El primer índice elige la fila; el segundo, la columna.' },
+      { t: 'salida', c: `const cola = ["a", "b", "c"];
+cola.shift();
+cola.unshift("z");
+console.log(cola);`, o: ['["z", "b", "c"]', '["z", "a", "b", "c"]', '["a", "b", "z"]', '["b", "c", "z"]'],
+        w: 'shift saca el primer elemento ("a") y unshift agrega uno al principio ("z"). Son los equivalentes de pop y push, pero trabajando sobre el inicio del arreglo.',
+        h: 'Los dos métodos trabajan sobre el principio del arreglo.' },
+      { t: 'salida', c: `const nums = [4, 9, 12, 7];
+console.log(nums.find(n => n > 5), nums.filter(n => n > 5));`, o: ['9 [9, 12, 7]', '[9, 12, 7] [9, 12, 7]', '9 9', '12 [9, 12, 7]'],
+        w: 'find devuelve el primer elemento que cumple la condición y deja de buscar: 9. filter recorre todo y devuelve un arreglo con todos los que cumplen.',
+        h: 'Uno devuelve un elemento y el otro, un arreglo.' },
+      { t: 'salida', c: `const nums = [10, 9, 1];
+nums.sort();
+console.log(nums);`, o: ['[1, 10, 9]', '[1, 9, 10]', '[10, 9, 1]', '[9, 10, 1]'],
+        w: 'Sin función de comparación, sort convierte los elementos a texto y los ordena como palabras: "10" va antes que "9" porque "1" es menor que "9". Para números se usa nums.sort((a, b) => a - b).',
+        h: 'sort sin argumentos compara como si fueran textos.' },
+      { t: 'salida', c: `const letras = ["a", "b", "c", "d"];
+const quitadas = letras.splice(1, 2);
+console.log(quitadas, letras);`, o: ['["b", "c"] ["a", "d"]', '["b", "c"] ["a", "b", "c", "d"]', '["b"] ["a", "c", "d"]', '["a", "d"] ["b", "c"]'],
+        w: 'splice(1, 2) quita 2 elementos empezando en el índice 1, los devuelve y modifica el original. Es la diferencia con slice, que copia sin modificar y recibe inicio y fin.',
+        h: 'splice recibe desde dónde y cuántos, y cambia el original.' },
+      { t: 'concepto', q: '¿Cuál de estos métodos NO modifica el arreglo original?', o: ['map', 'push', 'splice', 'sort'],
+        w: 'map devuelve un arreglo nuevo con cada elemento transformado. push, splice y sort cambian el arreglo sobre el que se los llama.',
+        h: 'Buscá el que devuelve un arreglo nuevo.' }
+    ] },
+  { id: 'u4d', dif: 'Difícil', n: 'Ordenamiento y recorridos',
+    idea: 'El método de la burbuja ordena comparando pares de elementos vecinos e intercambiándolos si están en el orden incorrecto; en cada pasada, un valor queda en su lugar definitivo. Quick Sort elige un pivote, separa menores y mayores y se aplica recursivamente a cada parte: divide y vencerás.',
+    ej: `let arr = [5, 3, 8];
+if (arr[0] > arr[1]) {
+  let aux = arr[0];
+  arr[0] = arr[1];
+  arr[1] = aux;
+}
+console.log(arr); // [3, 5, 8]`,
+    puntos: [
+      'Burbuja: fácil de entender, pero lenta con arreglos grandes.',
+      'Quick Sort: su caso base es un arreglo de 0 o 1 elemento, que ya está ordenado.',
+      'reduce acumula todo en un valor; su segundo argumento es el valor inicial del acumulador.'
+    ],
+    ojo: 'Para intercambiar dos posiciones hace falta una variable auxiliar; sin ella se pisa uno de los dos valores.',
+    qs: [
+      { t: 'salida', q: 'Esta es UNA sola pasada del método de la burbuja. ¿Cómo queda el arreglo?', c: `const arr = [5, 1, 4, 2];
+for (let i = 0; i < arr.length - 1; i++) {
+  if (arr[i] > arr[i + 1]) {
+    const aux = arr[i];
+    arr[i] = arr[i + 1];
+    arr[i + 1] = aux;
+  }
+}
+console.log(arr);`, o: ['[1, 4, 2, 5]', '[1, 2, 4, 5]', '[5, 1, 4, 2]', '[1, 5, 4, 2]'],
+        w: 'El 5 se compara con cada vecino y va cambiando de lugar: [1, 5, 4, 2], [1, 4, 5, 2], [1, 4, 2, 5]. Al final de la pasada el mayor quedó último, pero el resto todavía no está ordenado: hacen falta más pasadas.',
+        h: 'Seguí al 5: se compara tres veces con su vecino de la derecha.' },
+      { t: 'concepto', q: 'Quick Sort sobre [8, 3, 1, 7, 0, 10, 2] tomando como pivote el último elemento. ¿Cómo queda la primera partición?', o: ['Menores: 1 y 0. Mayores: 8, 3, 7 y 10', 'Menores: 8, 3 y 1. Mayores: 7, 0 y 10', 'Menores: 0. Mayores: todos los demás', 'Menores: 3, 1 y 0. Mayores: 8, 7 y 10'],
+        w: 'El pivote es 2. Se separan los que son menores que 2 (1 y 0) de los mayores (8, 3, 7 y 10), y después se aplica Quick Sort a cada grupo por separado.',
+        h: 'El pivote es 2: compará cada elemento contra él.' },
+      { t: 'concepto', q: '¿Cuál es el caso base de Quick Sort?', o: ['Un arreglo de 0 o 1 elemento, que ya está ordenado', 'Un arreglo con todos los elementos iguales', 'Cuando el pivote es el número más grande', 'Un arreglo de exactamente 2 elementos'],
+        w: 'Quick Sort es recursivo: parte el problema en arreglos cada vez más chicos. Cuando un arreglo tiene 0 o 1 elemento no hay nada que ordenar, se devuelve tal cual y ahí se corta la recursión.',
+        h: '¿Qué arreglo no necesita ordenarse?' },
+      { t: 'salida', c: `const productos = [
+  { nombre: "Mouse", precio: 500, stock: 2 },
+  { nombre: "Teclado", precio: 900, stock: 0 },
+  { nombre: "Monitor", precio: 3000, stock: 1 }
+];
+const total = productos
+  .filter(p => p.stock > 0)
+  .reduce((acum, p) => acum + p.precio * p.stock, 0);
+console.log(total);`, o: ['4000', '4400', '3500', '4900'],
+        w: 'filter deja afuera al teclado porque no tiene stock. reduce arranca en 0 y suma precio por stock: 500 * 2 = 1000 y 3000 * 1 = 3000. Total 4000.',
+        h: 'Primero descartá los productos sin stock.' },
+      { t: 'salida', c: `const matriz = [[1, 2], [3, 4]];
+let suma = 0;
+for (let f = 0; f < matriz.length; f++) {
+  for (let c = 0; c < matriz[f].length; c++) {
+    if (f === c) suma += matriz[f][c];
+  }
+}
+console.log(suma);`, o: ['5', '10', '4', '6'],
+        w: 'Los dos for recorren toda la matriz, pero el if deja pasar solo las posiciones donde fila y columna coinciden: [0][0] = 1 y [1][1] = 4. Es la diagonal principal.',
+        h: '¿En qué posiciones el número de fila es igual al de columna?' },
+      { t: 'salida', c: `const original = [3, 1, 2];
+const ordenado = [...original].sort((a, b) => b - a);
+console.log(original, ordenado);`, o: ['[3, 1, 2] [3, 2, 1]', '[3, 2, 1] [3, 2, 1]', '[3, 1, 2] [1, 2, 3]', '[1, 2, 3] [3, 2, 1]'],
+        w: 'sort modifica el arreglo sobre el que se llama, pero acá se llama sobre una copia hecha con spread, así que el original no cambia. b - a ordena de mayor a menor.',
+        h: 'Mirá sobre qué arreglo se llama a sort.' }
+    ] }
+] },
+{ id: 'u5', final: true, nombre: 'Unidad 5 · Objetos y POO', desc: 'Objetos, clases, instancias y los cuatro pilares.', temas: [
+  { id: 'u5m', dif: 'Medio', n: 'Objetos y clases',
+    idea: 'Un objeto guarda propiedades como pares clave: valor. Una clase es una plantilla que define cómo van a ser los objetos de un tipo. Instanciar es crear un objeto concreto a partir de ella con new. Los atributos son sus datos y los métodos, sus comportamientos.',
+    ej: `class Persona {
+  constructor(nombre, edad) {
+    this.nombre = nombre;
+    this.edad = edad;
+  }
+  presentarse() {
+    console.log("Hola, soy " + this.nombre);
+  }
+}
+const ana = new Persona("Ana", 30);
+ana.presentarse(); // Hola, soy Ana`,
+    puntos: [
+      'JavaScript se basa en prototipos; class es una sintaxis más cómoda sobre ese modelo.',
+      '"clave" in objeto indica si la propiedad existe. for...in recorre las claves.',
+      'Dentro de un método, this es el objeto sobre el que se lo llamó.'
+    ],
+    ojo: 'Una clase sola no hace nada: hay que instanciarla. Y cada instancia tiene sus propios datos.',
+    qs: [
+      { t: 'concepto', q: '¿Cuál es la diferencia entre una clase y un objeto?', o: ['La clase es la plantilla; el objeto es una instancia concreta creada a partir de ella', 'La clase guarda datos y el objeto guarda funciones', 'Son lo mismo: objeto es el nombre que se usa en JavaScript', 'El objeto es la plantilla y la clase es cada copia'],
+        w: 'La clase define de forma genérica cómo son los objetos de un tipo (Persona). Los objetos son entidades concretas con sus propios valores (Ana, Juana). Crear uno a partir de la clase se llama instanciar.',
+        h: 'Una es el molde y el otro es lo que sale del molde.' },
+      { t: 'salida', c: `const obj = { test: undefined };
+console.log(obj.test, "test" in obj, "otra" in obj);`, o: ['undefined true false', 'undefined false false', 'undefined true true', 'Da error'],
+        w: 'La propiedad test existe aunque guarde undefined, por eso in da true. Comparar con undefined no alcanza para saber si una propiedad existe; el operador in sí lo dice.',
+        h: 'Una cosa es que la propiedad exista y otra es qué valor guarda.' },
+      { t: 'salida', c: `const user = { name: "John", age: 30 };
+let claves = "";
+for (const key in user) {
+  claves += key + " ";
+}
+console.log(claves.trim());`, o: ['name age', 'John 30', '0 1', 'name: John age: 30'],
+        w: 'for...in recorre las claves del objeto, no los valores. Para llegar al valor dentro del bucle se usan corchetes: user[key].',
+        h: '¿for...in entrega las claves o los valores?' },
+      { t: 'salida', c: `class Contador {
+  constructor() {
+    this.valor = 0;
+  }
+  sumar() {
+    this.valor++;
+  }
+}
+const a = new Contador();
+const b = new Contador();
+a.sumar();
+a.sumar();
+console.log(a.valor, b.valor);`, o: ['2 0', '2 2', '1 1', '0 0'],
+        w: 'Cada new crea una instancia con sus propios atributos. this dentro de sumar es el objeto sobre el que se llamó el método (a), así que b nunca se modificó.',
+        h: 'a y b son dos instancias distintas de la misma clase.' },
+      { t: 'salida', c: `const clave = "color";
+const nombre = "Fiat";
+const auto = { nombre, [clave]: "rojo" };
+console.log(auto.nombre, auto.color, auto.clave);`, o: ['Fiat rojo undefined', 'Fiat rojo color', 'undefined rojo undefined', 'Fiat undefined rojo'],
+        w: 'nombre solo es el atajo de nombre: nombre. [clave] es una propiedad calculada: usa el contenido de la variable, así que la propiedad se llama color. No existe ninguna propiedad llamada "clave".',
+        h: 'Los corchetes en la clave toman el valor de la variable.' },
+      { t: 'concepto', q: 'JavaScript tiene la palabra class. ¿En qué modelo se basa realmente?', o: ['En prototipos: class es una sintaxis sobre ese modelo', 'En clases, igual que Java', 'En módulos', 'En ninguno: no permite trabajar con objetos'],
+        w: 'El modelo más habitual de POO es el basado en clases, pero JavaScript se basa en prototipos: cada objeto tiene un prototipo del que toma propiedades y métodos. La sintaxis class se apoya en ese mecanismo.',
+        h: 'Es lo primero que plantea el material de POO.' }
+    ] },
+  { id: 'u5d', dif: 'Difícil', n: 'Los cuatro pilares de la POO',
+    idea: 'Abstracción: mostrar solo lo necesario y ocultar los detalles internos. Encapsulación: proteger los datos y permitir el acceso solo por métodos controlados. Herencia: una clase hija reutiliza propiedades y métodos de la clase padre. Polimorfismo: un mismo método se comporta distinto según la clase que lo implementa.',
+    ej: `class Persona {
+  hablar() {
+    console.log("Hola, soy una persona.");
+  }
+}
+class Estudiante extends Persona {
+  hablar() {
+    console.log("Hola, soy un estudiante.");
+  }
+}
+new Estudiante().hablar(); // Hola, soy un estudiante.`,
+    puntos: [
+      '#dato declara una propiedad privada: solo se accede desde dentro de la clase.',
+      'get y set permiten leer y validar un dato usándolo como si fuera una propiedad.',
+      'super(...) llama al constructor de la clase padre.'
+    ],
+    ojo: 'En una clase hija, usar this en el constructor antes de llamar a super() da error.',
+    qs: [
+      { t: 'concepto', q: 'Preparás café apretando un botón, sin saber cómo la cafetera calienta el agua por dentro. ¿Qué pilar ilustra?', o: ['Abstracción', 'Herencia', 'Polimorfismo', 'Encapsulación'],
+        w: 'La abstracción se enfoca en qué hace un objeto y no en cómo lo hace: muestra lo necesario y oculta la implementación. La encapsulación es otra cosa: proteger los datos para que no se modifiquen directamente desde afuera.',
+        h: 'Importa qué hace, no cómo lo hace.' },
+      { t: 'salida', c: `class Persona {
+  constructor(nombre) {
+    this.nombre = nombre;
+  }
+  presentarse() {
+    return "Soy " + this.nombre;
+  }
+}
+class Estudiante extends Persona {
+  constructor(nombre, carrera) {
+    super(nombre);
+    this.carrera = carrera;
+  }
+}
+const e = new Estudiante("Max", "Full Stack");
+console.log(e.presentarse(), e instanceof Persona);`, o: ['Soy Max true', 'Soy Max false', 'Da error: presentarse no existe en Estudiante', 'Soy undefined true'],
+        w: 'Es herencia: Estudiante no define presentarse, pero lo hereda de Persona. super(nombre) le pasa el nombre al constructor del padre. Y un Estudiante también es una Persona, por eso instanceof da true.',
+        h: 'extends hace que la hija reciba los métodos del padre.' },
+      { t: 'salida', c: `class Animal {
+  sonido() { return "..."; }
+}
+class Perro extends Animal {
+  sonido() { return "Guau"; }
+}
+class Gato extends Animal {}
+const animales = [new Perro(), new Gato()];
+console.log(animales.map(a => a.sonido()));`, o: ['["Guau", "..."]', '["Guau", "Guau"]', '["...", "..."]', 'Da error: Gato no tiene sonido'],
+        w: 'Es polimorfismo: se llama al mismo método y cada objeto responde según su clase. Perro lo redefine y devuelve "Guau". Gato no lo redefine, así que usa el que heredó de Animal.',
+        h: 'Fijate cuál de las dos clases hijas redefine el método.' },
+      { t: 'salida', c: `class Cuenta {
+  #saldo = 100;
+  depositar(monto) {
+    this.#saldo += monto;
+  }
+  verSaldo() {
+    return this.#saldo;
+  }
+}
+const c = new Cuenta();
+c.depositar(50);
+console.log(c.verSaldo(), c.saldo);`, o: ['150 undefined', '150 150', '100 undefined', 'Da error'],
+        w: 'Es encapsulación: #saldo es privada y solo se toca por los métodos de la clase. Desde afuera, c.saldo busca una propiedad pública llamada saldo, que no existe, y da undefined.',
+        h: 'El # hace que el dato no sea visible desde afuera.' },
+      { t: 'salida', c: `class Person {
+  constructor(edad) {
+    this.edad = edad;
+  }
+  get edad() {
+    return this._edad;
+  }
+  set edad(nueva) {
+    if (typeof nueva !== "number" || nueva < 0) return;
+    this._edad = nueva;
+  }
+}
+const p = new Person(20);
+p.edad = -5;
+console.log(p.edad);`, o: ['20', '-5', 'undefined', 'Da error'],
+        w: 'Asignar p.edad no guarda directo: dispara el setter, que valida. Como -5 es negativo, corta con return y no cambia nada. Al leer p.edad actúa el getter y devuelve el 20 guardado en _edad.',
+        h: 'La asignación pasa por el set, que tiene una validación.' },
+      { t: 'salida', q: '¿Qué pasa al ejecutar este código?', v: 'ERROR ReferenceError', c: `class A {
+  constructor() {
+    this.x = 1;
+  }
+}
+class B extends A {
+  constructor() {
+    this.y = 2;
+    super();
+  }
+}
+new B();`, o: ['Da error: hay que llamar a super() antes de usar this', 'Crea un objeto con x = 1 e y = 2', 'Crea un objeto solo con y = 2', 'Crea un objeto solo con x = 1'],
+        w: 'En una clase hija, el objeto recién existe después de que se ejecuta el constructor del padre. Por eso super() tiene que ir antes de cualquier uso de this; al revés da ReferenceError.',
+        h: 'Mirá el orden de las dos líneas dentro del constructor de B.' }
+    ] }
+] }
+];
+
+const BASE = [
+{ id: 'basico', nombre: 'Básico', desc: 'Variables, operadores, decisiones y repeticiones.', temas: [
+  { id: 'b1', n: 'Variables y tipos',
+    idea: 'Una variable es una etiqueta con nombre que guarda un valor. Con let podés cambiar ese valor después; con const no se puede reasignar. Cada valor tiene un tipo: number, string, boolean, entre otros.',
+    ej: `let vidas = 3;
+vidas = vidas - 1;
+const nombre = "Link";
+console.log(nombre, vidas); // Link 2`,
+    ojo: 'El + entre un texto y un número no suma: pega. "5" + 1 da "51".',
+    qs: [
+      { t: 'salida', c: `let puntos = 10;
+puntos = puntos + 5;
+console.log(puntos);`, o: ['15', '10', '105', 'Da error'],
+        w: 'La línea 2 lee el valor actual (10), le suma 5 y guarda el resultado en la misma variable. Como se declaró con let, se puede reasignar.',
+        h: 'En la línea 2 primero se calcula lo de la derecha y después se guarda.' },
+      { t: 'salida', c: `const a = "5";
+const b = 2;
+console.log(a + b);`, o: ['52', '7', '10', 'Da error'],
+        w: 'a es un texto por las comillas. Cuando uno de los dos lados del + es texto, JavaScript convierte el otro a texto y los pega. Para sumar habría que escribir Number(a) + b.',
+        h: 'Mirá las comillas de la línea 1: ¿qué tipo de dato es a?' },
+      { t: 'salida', q: '¿Qué pasa al ejecutar este código?', v: 'ERROR TypeError', c: `const nivel = 1;
+nivel = 2;
+console.log(nivel);`, o: ['Da un error en la línea 2', 'Muestra 2', 'Muestra 1', 'Muestra undefined'],
+        w: 'const no permite reasignar. La línea 2 corta el programa con "TypeError: Assignment to constant variable" y la línea 3 nunca se ejecuta. Si el valor va a cambiar, se declara con let.',
+        h: 'Fijate con qué palabra se declaró nivel.' },
+      { t: 'salida', c: `let x;
+console.log(typeof x);`, o: ['undefined', 'null', 'string', 'Da error'],
+        w: 'Una variable declarada sin valor vale undefined, y typeof de undefined es "undefined". No es un error: la variable existe, solo que todavía no tiene nada.',
+        h: 'La variable existe pero nadie le asignó un valor.' },
+      { t: 'salida', c: `console.log(typeof "42", typeof 42);`, o: ['string number', 'number number', 'string string', 'number string'],
+        w: 'Las comillas convierten a "42" en texto aunque adentro haya dígitos. Sin comillas, 42 es un número. El tipo depende de cómo está escrito el valor, no de cómo se ve.',
+        h: 'Uno de los dos tiene comillas.' }
+    ] },
+  { id: 'b2', n: 'Operadores y comparaciones',
+    idea: 'Los operadores calculan (+ - * / %) y comparan (=== !== < >). Una comparación siempre devuelve true o false. Con && se tienen que cumplir las dos condiciones; con || alcanza con una.',
+    ej: `const edad = 20;
+console.log(edad >= 18 && edad < 65); // true
+console.log(7 % 2); // 1, el resto de dividir 7 por 2`,
+    ojo: '== convierte los tipos antes de comparar y da sorpresas: "5" == 5 es true. Usá ===, que compara valor y tipo.',
+    qs: [
+      { t: 'salida', c: `console.log(17 % 5);`, o: ['2', '3', '3.4', '12'],
+        w: '% devuelve el resto de la división: 17 = 5 × 3 + 2, así que sobra 2. Se usa mucho para saber si un número es par: n % 2 === 0.',
+        h: '¿Cuánto sobra si repartís 17 en grupos de 5?' },
+      { t: 'salida', c: `console.log("3" == 3, "3" === 3);`, o: ['true false', 'true true', 'false false', 'false true'],
+        w: '== convierte el texto "3" a número antes de comparar y por eso da true. === no convierte nada: un texto y un número nunca son iguales, da false.',
+        h: 'Uno de los dos operadores mira también el tipo.' },
+      { t: 'salida', c: `const tieneLlave = true;
+const puertaAbierta = false;
+console.log(tieneLlave || puertaAbierta, tieneLlave && puertaAbierta);`, o: ['true false', 'true true', 'false false', 'false true'],
+        w: '|| da true si al menos una es verdadera (tieneLlave lo es). && necesita que las dos lo sean, y puertaAbierta es false.',
+        h: '|| se lee "o", && se lee "y".' },
+      { t: 'salida', c: `console.log(2 + 3 * 4);`, o: ['14', '20', '24', '9'],
+        w: 'La multiplicación se resuelve antes que la suma, igual que en matemática: 3 * 4 = 12 y después 2 + 12. Para sumar primero hacen falta paréntesis: (2 + 3) * 4.',
+        h: '¿Qué operación se resuelve primero en matemática?' },
+      { t: 'salida', c: `let n = 5;
+n += 2;
+n++;
+console.log(n);`, o: ['8', '7', '6', '52'],
+        w: 'n += 2 es una forma corta de n = n + 2 (queda 7). n++ suma 1 (queda 8).',
+        h: 'Seguí el valor de n línea por línea.' }
+    ] },
+  { id: 'b3', n: 'Condicionales',
+    idea: 'if ejecuta un bloque solo si la condición es verdadera, y else cubre el otro caso. Las condiciones se revisan en orden y se entra en la primera que se cumple.',
+    ej: `const hp = 0;
+if (hp > 0) {
+  console.log("Sigue en pie");
+} else {
+  console.log("Game over");
+}`,
+    ojo: 'Hay valores que cuentan como falsos sin ser false: 0, "" (texto vacío), null, undefined y NaN. Todo lo demás cuenta como verdadero.',
+    qs: [
+      { t: 'salida', c: `const nota = 7;
+if (nota >= 6) {
+  console.log("Aprobado");
+} else {
+  console.log("Desaprobado");
+}`, o: ['Aprobado', 'Desaprobado', 'Aprobado\nDesaprobado', 'No muestra nada'],
+        w: '7 >= 6 es true, así que se ejecuta el bloque del if y el else se saltea. Nunca corren los dos.',
+        h: 'Evaluá la condición: ¿7 es mayor o igual que 6?' },
+      { t: 'salida', c: `const puntos = 95;
+if (puntos > 50) {
+  console.log("Bronce");
+} else if (puntos > 90) {
+  console.log("Oro");
+}`, o: ['Bronce', 'Oro', 'Bronce\nOro', 'No muestra nada'],
+        w: 'Se entra en la primera condición verdadera. 95 > 50 ya se cumple, así que el else if ni se evalúa. Para que funcione bien, la condición más exigente (> 90) tiene que ir primero.',
+        h: 'Las condiciones se revisan de arriba hacia abajo y se frena en la primera que se cumple.' },
+      { t: 'salida', c: `const nombre = "";
+if (nombre) {
+  console.log("Hola " + nombre);
+} else {
+  console.log("Sin nombre");
+}`, o: ['Sin nombre', 'Hola ', 'Hola undefined', 'Da error'],
+        w: 'Un texto vacío cuenta como falso dentro de una condición, por eso entra al else. Es una forma habitual de chequear si un campo quedó sin completar.',
+        h: '¿Un texto sin nada adentro cuenta como verdadero o como falso?' },
+      { t: 'salida', c: `const edad = 15;
+const acceso = edad >= 18 ? "Entra" : "No entra";
+console.log(acceso);`, o: ['No entra', 'Entra', 'false', 'undefined'],
+        w: 'El operador ternario es un if/else en una línea: condición ? valor si es verdadera : valor si es falsa. Como 15 >= 18 es false, se queda con lo que está después de los dos puntos.',
+        h: 'Leelo como: ¿se cumple? entonces esto : si no, esto otro.' },
+      { t: 'salida', q: 'Este código tiene un error clásico. ¿Qué muestra?', c: `let vidas = 3;
+if (vidas = 0) {
+  console.log("Perdiste");
+} else {
+  console.log("Seguís jugando");
+}
+console.log(vidas);`, o: ['Seguís jugando\n0', 'Seguís jugando\n3', 'Perdiste\n0', 'Perdiste\n3'],
+        w: 'Un solo = asigna, no compara. La línea 2 le pone 0 a vidas, y ese 0 cuenta como falso, así que entra al else. Encima la variable quedó pisada. Para comparar se usa ===.',
+        h: 'Contá los signos = de la línea 2.' }
+    ] },
+  { id: 'b4', n: 'Bucles',
+    idea: 'Un bucle repite un bloque mientras una condición sea verdadera. El for junta en una línea tres cosas: dónde empieza, hasta cuándo sigue y cómo avanza.',
+    ej: `for (let i = 1; i <= 3; i++) {
+  console.log("Vuelta " + i);
+}
+// Vuelta 1, Vuelta 2, Vuelta 3`,
+    ojo: 'Si la condición nunca se vuelve falsa, el bucle no termina más. Revisá que en cada vuelta cambie algo que acerque al final.',
+    qs: [
+      { t: 'concepto', q: '¿Cuántas veces se ejecuta el console.log?', c: `for (let i = 0; i < 4; i++) {
+  console.log(i);
+}`, o: ['4 veces', '3 veces', '5 veces', 'Infinitas veces'],
+        w: 'i vale 0, 1, 2 y 3: son cuatro vueltas. Cuando i llega a 4, la condición i < 4 es falsa y el bucle termina. Arrancar en 0 y usar < es la forma típica de dar n vueltas.',
+        h: 'Anotá los valores que toma i hasta que la condición deja de cumplirse.' },
+      { t: 'salida', c: `let suma = 0;
+for (let i = 1; i <= 4; i++) {
+  suma = suma + i;
+}
+console.log(suma);`, o: ['10', '4', '6', '15'],
+        w: 'suma funciona como acumulador: en cada vuelta se le agrega i. 0 + 1 + 2 + 3 + 4 = 10. El console.log está afuera del bucle, por eso se muestra una sola vez.',
+        h: 'Llevá la cuenta de suma después de cada vuelta.' },
+      { t: 'salida', c: `let n = 3;
+while (n > 0) {
+  n--;
+}
+console.log(n);`, o: ['0', '1', '-1', '3'],
+        w: 'El while sigue mientras n sea mayor que 0. n pasa por 2, 1 y 0; al llegar a 0 la condición es falsa y se sale. Por eso termina valiendo 0.',
+        h: '¿Con qué valor de n deja de cumplirse n > 0?' },
+      { t: 'salida', c: `for (let i = 1; i <= 5; i++) {
+  if (i === 3) continue;
+  if (i === 5) break;
+  console.log(i);
+}`, o: ['1\n2\n4', '1\n2', '1\n2\n4\n5', '1\n2\n3\n4'],
+        w: 'continue saltea el resto de esa vuelta y pasa a la siguiente (por eso falta el 3). break corta el bucle entero (por eso no llega a mostrar el 5).',
+        h: 'continue saltea una vuelta; break termina el bucle.' },
+      { t: 'concepto', q: '¿Qué problema tiene este bucle?', c: `let i = 0;
+while (i < 3) {
+  console.log(i);
+}`, o: ['Nunca termina, porque i no cambia dentro del bucle', 'Ninguno: muestra 0, 1 y 2', 'No entra nunca al bucle', 'Tiene un error de sintaxis'],
+        w: 'Adentro del while nada modifica a i, así que i < 3 es verdadera para siempre y muestra 0 sin parar. Falta un i++ dentro de las llaves.',
+        h: 'Buscá la línea que debería hacer avanzar a i.' }
+    ] }
+] },
+{ id: 'medio', nombre: 'Medio', desc: 'Funciones, alcance de variables, arreglos y objetos.', temas: [
+  { id: 'm1', n: 'Funciones',
+    idea: 'Una función es un bloque de código con nombre que podés usar todas las veces que quieras. Recibe datos por sus parámetros y entrega un resultado con return.',
+    ej: `function doble(n) {
+  return n * 2;
+}
+console.log(doble(4)); // 8`,
+    ojo: 'Mostrar con console.log no es lo mismo que devolver. Una función sin return devuelve undefined.',
+    qs: [
+      { t: 'salida', c: `function saludar(nombre) {
+  console.log("Hola " + nombre);
+}
+const r = saludar("Ana");
+console.log(r);`, o: ['Hola Ana\nundefined', 'Hola Ana\nHola Ana', 'Hola Ana', 'undefined'],
+        w: 'La función muestra el saludo pero no tiene return, así que devuelve undefined y eso es lo que queda guardado en r. Mostrar por consola y devolver un valor son cosas distintas.',
+        h: '¿Qué devuelve una función que no tiene return?' },
+      { t: 'salida', c: `function area(base, altura = 2) {
+  return base * altura;
+}
+console.log(area(5), area(5, 3));`, o: ['10 15', 'NaN 15', '5 15', '10 10'],
+        w: 'altura = 2 es un valor por defecto: se usa solo cuando no se pasa ese argumento. En area(5) vale 2; en area(5, 3) se usa el 3.',
+        h: 'Mirá qué pasa con altura cuando no se la pasan.' },
+      { t: 'salida', c: `function sumar(a, b) {
+  return a + b;
+  console.log("listo");
+}
+console.log(sumar(2, 3));`, o: ['5', 'listo\n5', '5\nlisto', 'undefined'],
+        w: 'return devuelve el valor y termina la función en ese mismo momento. Lo que está escrito debajo dentro de la función nunca se ejecuta.',
+        h: '¿Qué pasa con las líneas que quedan después de un return?' },
+      { t: 'salida', c: `const cuadrado = n => n * n;
+console.log(cuadrado(3) + cuadrado(2));`, o: ['13', '25', '10', 'Da error'],
+        w: 'Una función flecha de una sola expresión devuelve ese resultado sin escribir return. cuadrado(3) da 9, cuadrado(2) da 4, y 9 + 4 es 13.',
+        h: 'Resolvé cada llamada por separado y después sumá.' },
+      { t: 'salida', c: `function total(a, b) {
+  return a + b;
+}
+console.log(total(4));`, o: ['NaN', '4', 'undefined', 'Da error'],
+        w: 'JavaScript no da error si faltan argumentos: el parámetro que no se pasó vale undefined. 4 + undefined no es un número válido y da NaN (Not a Number).',
+        h: '¿Cuánto vale b si nadie lo pasa?' }
+    ] },
+  { id: 'm2', n: 'Alcance de las variables',
+    idea: 'El alcance (scope) es la zona del código donde una variable existe. Lo que se declara con let o const dentro de unas llaves vive solo ahí. Desde adentro se ve lo de afuera, pero no al revés.',
+    ej: `const juego = "Zelda";
+function mostrar() {
+  const nivel = 3;
+  console.log(juego, nivel); // ve las dos
+}
+mostrar();
+// acá afuera, nivel no existe`,
+    ojo: 'Si adentro declarás una variable con el mismo nombre que una de afuera, es otra variable distinta: tapa a la de afuera sin modificarla.',
+    qs: [
+      { t: 'salida', q: '¿Qué pasa al ejecutar este código?', v: 'ERROR ReferenceError', c: `function crear() {
+  const secreto = 42;
+}
+crear();
+console.log(secreto);`, o: ['Da un error: secreto no está definida', 'Muestra 42', 'Muestra undefined', 'Muestra null'],
+        w: 'secreto se declaró dentro de la función y solo existe ahí. Afuera no hay ninguna variable con ese nombre, y usar una variable que no existe da ReferenceError.',
+        h: '¿Dónde se declaró secreto y dónde se la quiere usar?' },
+      { t: 'salida', c: `let x = 1;
+if (true) {
+  let x = 2;
+}
+console.log(x);`, o: ['1', '2', 'undefined', 'Da error'],
+        w: 'El let de adentro del if crea una x nueva que vive solo entre esas llaves. La x de afuera nunca se tocó. Sin el let (solo x = 2) sí se modificaría la de afuera.',
+        h: 'La línea 3 no asigna: declara.' },
+      { t: 'salida', c: `let contador = 0;
+function sumar() {
+  contador++;
+}
+sumar();
+sumar();
+console.log(contador);`, o: ['2', '0', '1', 'Da error'],
+        w: 'La función no declara un contador propio, así que usa el de afuera y lo modifica. Cada llamada le suma 1.',
+        h: 'Dentro de la función no hay let ni const.' },
+      { t: 'salida', c: `for (let i = 0; i < 3; i++) {}
+console.log(typeof i);`, o: ['undefined', 'number', '3', 'Da error'],
+        w: 'La i del for vive solo dentro del bucle. Afuera no existe, y typeof de algo que no existe devuelve "undefined" sin dar error. Usarla directamente, como console.log(i), sí daría ReferenceError.',
+        h: 'La i se declaró con let dentro del for.' },
+      { t: 'salida', c: `const x = 10;
+function f() {
+  const x = 20;
+  return x;
+}
+console.log(f(), x);`, o: ['20 10', '20 20', '10 10', 'Da error'],
+        w: 'Hay dos variables x distintas. Dentro de f se usa la más cercana (20). La de afuera sigue valiendo 10, y no hay error porque están en alcances diferentes.',
+        h: 'Cuando hay dos con el mismo nombre, se usa la más cercana.' }
+    ] },
+  { id: 'm3', n: 'Arreglos',
+    idea: 'Un arreglo guarda una lista ordenada de valores. Cada posición tiene un índice que empieza en 0, y length dice cuántos elementos hay.',
+    ej: `const items = ["espada", "escudo"];
+items.push("poción");
+console.log(items[0], items.length); // espada 3`,
+    ojo: 'El último elemento está en la posición length - 1, no en length. Pedir un índice que no existe no da error: devuelve undefined.',
+    qs: [
+      { t: 'salida', c: `const frutas = ["kiwi", "pera", "uva"];
+console.log(frutas[1], frutas[3]);`, o: ['pera undefined', 'kiwi uva', 'pera uva', 'Da error'],
+        w: 'Los índices empiezan en 0: kiwi es 0, pera es 1, uva es 2. En la posición 3 no hay nada, y eso devuelve undefined en lugar de un error.',
+        h: 'Numerá los elementos empezando por 0.' },
+      { t: 'salida', c: `const pila = [1, 2, 3];
+const ultimo = pila.pop();
+pila.push(9);
+console.log(ultimo, pila);`, o: ['3 [1, 2, 9]', '3 [1, 2, 3, 9]', '9 [1, 2, 9]', '2 [1, 9]'],
+        w: 'pop saca el último elemento del arreglo y lo devuelve (3). push agrega uno al final (9). Los dos modifican el arreglo original.',
+        h: 'pop saca del final y devuelve lo que sacó.' },
+      { t: 'salida', c: `const letras = ["a", "b", "c", "d"];
+const parte = letras.slice(1, 3);
+console.log(parte, letras.length);`, o: ['["b", "c"] 4', '["b", "c", "d"] 4', '["b", "c"] 2', '["a", "b", "c"] 4'],
+        w: 'slice(1, 3) copia desde el índice 1 hasta el 3 sin incluirlo: quedan b y c. No modifica el original, que sigue teniendo 4 elementos.',
+        h: 'El segundo número de slice no se incluye.' },
+      { t: 'salida', c: `const nums = [10, 20, 30];
+let total = 0;
+for (const n of nums) {
+  total += n;
+}
+console.log(total);`, o: ['60', '30', '3', '102030'],
+        w: 'for...of recorre los valores del arreglo uno por uno. En cada vuelta n vale 10, 20 y 30, y se van acumulando en total.',
+        h: 'n toma el valor de cada elemento, no su posición.' },
+      { t: 'salida', c: `const lista = [5, 8, 2];
+console.log(lista.includes(8), lista.indexOf(7));`, o: ['true -1', 'true undefined', '1 -1', 'true false'],
+        w: 'includes responde true o false según si el valor está. indexOf devuelve la posición, y cuando no lo encuentra devuelve -1 (no undefined ni false).',
+        h: '¿Qué número devuelve indexOf cuando no encuentra el valor?' }
+    ] },
+  { id: 'm4', n: 'Objetos',
+    idea: 'Un objeto agrupa datos relacionados en pares clave: valor. Se accede con punto (pj.nombre) o con corchetes (pj["nombre"]) cuando la clave está guardada en una variable.',
+    ej: `const pj = { nombre: "Zoro", nivel: 12 };
+pj.nivel++;
+console.log(pj.nombre, pj.nivel); // Zoro 13`,
+    ojo: 'Una variable no guarda el objeto sino una referencia a él. Si copiás con =, las dos variables apuntan al mismo objeto.',
+    qs: [
+      { t: 'salida', c: `const auto = { marca: "Fiat", puertas: 4 };
+console.log(auto.color);`, o: ['undefined', 'null', 'Da error', 'Un texto vacío'],
+        w: 'Pedir una propiedad que el objeto no tiene devuelve undefined, sin error. El error aparece recién si querés usar algo dentro de ese undefined, como auto.color.length.',
+        h: 'Pasa lo mismo que con un índice que no existe en un arreglo.' },
+      { t: 'salida', c: `const a = { vida: 100 };
+const b = a;
+b.vida = 50;
+console.log(a.vida);`, o: ['50', '100', 'undefined', 'Da error'],
+        w: 'b = a no crea otro objeto: copia la referencia. a y b son dos nombres para el mismo objeto, así que el cambio hecho desde b se ve desde a.',
+        h: '¿Cuántos objetos se crearon con llaves en este código?' },
+      { t: 'salida', c: `const pj = { nombre: "Nami", oro: 300 };
+const clave = "oro";
+console.log(pj[clave], pj.clave);`, o: ['300 undefined', '300 300', 'undefined 300', 'oro oro'],
+        w: 'Con corchetes se usa el contenido de la variable: pj[clave] es pj["oro"]. Con punto se busca una propiedad que se llame literalmente "clave", y esa no existe.',
+        h: 'El punto toma el nombre tal cual está escrito.' },
+      { t: 'salida', c: `const libro = { titulo: "Dune", paginas: 600 };
+console.log(Object.keys(libro).length);`, o: ['2', '600', '4', 'undefined'],
+        w: 'Object.keys devuelve un arreglo con los nombres de las propiedades: ["titulo", "paginas"]. Su length es 2. Los objetos no tienen length propio, por eso se pasa por Object.keys.',
+        h: 'Object.keys arma un arreglo con las claves.' },
+      { t: 'salida', q: 'config se declaró con const. ¿Qué pasa?', c: `const config = { volumen: 7 };
+config.volumen = 9;
+config.brillo = 5;
+console.log(config);`, o: ['{ volumen: 9, brillo: 5 }', 'Da error en la línea 2', '{ volumen: 7 }', '{ volumen: 7, brillo: 5 }'],
+        w: 'const impide reasignar la variable (config = otraCosa), pero no impide cambiar el objeto por dentro. Se pueden modificar y agregar propiedades sin problema.',
+        h: 'const protege la variable, no el contenido del objeto.' }
+    ] }
+] },
+{ id: 'intermedio', nombre: 'Intermedio', desc: 'Métodos de arreglos, closures, asincronía y copias.', temas: [
+  { id: 'i1', n: 'map, filter y reduce',
+    idea: 'Estos métodos recorren un arreglo aplicando una función a cada elemento. map transforma cada uno y devuelve un arreglo del mismo largo; filter se queda con los que cumplen una condición; reduce junta todo en un solo valor.',
+    ej: `const precios = [100, 250, 80];
+const caros = precios.filter(p => p > 90);
+console.log(caros); // [100, 250]`,
+    ojo: 'map y filter no modifican el arreglo original: devuelven uno nuevo. Si no guardás el resultado, se pierde.',
+    qs: [
+      { t: 'salida', c: `const nums = [1, 2, 3];
+const dobles = nums.map(n => n * 2);
+console.log(dobles, nums);`, o: ['[2, 4, 6] [1, 2, 3]', '[2, 4, 6] [2, 4, 6]', '[1, 2, 3] [1, 2, 3]', '12 [1, 2, 3]'],
+        w: 'map arma un arreglo nuevo con el resultado de la función para cada elemento. El original queda intacto.',
+        h: '¿map cambia el arreglo sobre el que se llama?' },
+      { t: 'salida', c: `const edades = [12, 18, 25, 9];
+const mayores = edades.filter(e => e >= 18);
+console.log(mayores.length);`, o: ['2', '4', '[18, 25]', '43'],
+        w: 'filter se queda con los elementos para los que la función devuelve true: 18 y 25. El resultado es [18, 25], y su length es 2.',
+        h: 'Primero pensá qué arreglo queda, después contá.' },
+      { t: 'salida', c: `const gastos = [100, 50, 25];
+const total = gastos.reduce((acum, g) => acum + g, 0);
+console.log(total);`, o: ['175', '[100, 50, 25]', '25', '0'],
+        w: 'reduce va llevando un acumulador que arranca en 0 (el segundo argumento). En cada vuelta devuelve acum + g: 100, después 150, después 175.',
+        h: 'acum empieza en 0 y en cada vuelta guarda lo que devuelve la función.' },
+      { t: 'salida', c: `const nums = [1, 2, 3];
+const r = nums.map(n => {
+  n * 10;
+});
+console.log(r);`, o: ['[undefined, undefined, undefined]', '[10, 20, 30]', '[1, 2, 3]', 'Da error'],
+        w: 'Cuando una función flecha lleva llaves, hace falta escribir return. Acá la multiplicación se calcula y se descarta, así que cada vuelta devuelve undefined. Se arregla con return n * 10 o quitando las llaves.',
+        h: 'Fijate si la función flecha devuelve algo.' },
+      { t: 'salida', c: `const pjs = [
+  { nombre: "Luffy", nivel: 40 },
+  { nombre: "Usopp", nivel: 15 },
+  { nombre: "Sanji", nivel: 35 }
+];
+const nombres = pjs.filter(p => p.nivel > 30).map(p => p.nombre);
+console.log(nombres);`, o: ['["Luffy", "Sanji"]', '["Luffy", "Usopp", "Sanji"]', '[40, 35]', '["Usopp"]'],
+        w: 'Se pueden encadenar porque cada método devuelve un arreglo. Primero filter deja los de nivel mayor a 30, y después map convierte cada objeto en su nombre.',
+        h: 'Resolvé el filter primero y aplicale el map a lo que quedó.' }
+    ] },
+  { id: 'i2', n: 'Callbacks y closures',
+    idea: 'En JavaScript una función es un valor: se puede guardar en una variable, pasar como argumento (eso es un callback) o devolver desde otra función. Una closure es una función que recuerda las variables del lugar donde fue creada.',
+    ej: `function crearContador() {
+  let cuenta = 0;
+  return () => ++cuenta;
+}
+const contar = crearContador();
+console.log(contar(), contar()); // 1 2`,
+    ojo: 'Pasar una función (avisar) no es lo mismo que llamarla (avisar()). Con paréntesis se ejecuta en ese momento y lo que se pasa es su resultado.',
+    qs: [
+      { t: 'salida', c: `function repetir(veces, accion) {
+  for (let i = 0; i < veces; i++) accion(i);
+}
+repetir(3, n => console.log(n * n));`, o: ['0\n1\n4', '1\n4\n9', '0\n1\n2', '9'],
+        w: 'repetir recibe una función y la llama en cada vuelta pasándole i (0, 1 y 2). El callback muestra el cuadrado de lo que recibe: 0, 1 y 4.',
+        h: '¿Qué valores toma i y qué hace el callback con cada uno?' },
+      { t: 'salida', c: `function crearContador() {
+  let cuenta = 0;
+  return () => ++cuenta;
+}
+const a = crearContador();
+const b = crearContador();
+a();
+a();
+console.log(a(), b());`, o: ['3 1', '3 3', '3 4', '1 1'],
+        w: 'Cada llamada a crearContador crea una variable cuenta nueva. a y b recuerdan cada una la suya, por eso avanzan por separado: a va por 3 y b recién por 1.',
+        h: '¿Cuántas variables cuenta se crearon?' },
+      { t: 'salida', c: `function multiplicarPor(factor) {
+  return n => n * factor;
+}
+const triple = multiplicarPor(3);
+console.log(triple(5));`, o: ['15', '8', '35', 'Da error: factor ya no existe'],
+        w: 'multiplicarPor ya terminó de ejecutarse, pero la función que devolvió sigue recordando que factor vale 3. Eso es una closure. Entonces triple(5) calcula 5 * 3.',
+        h: 'La función devuelta se lleva consigo el valor de factor.' },
+      { t: 'concepto', q: 'Se quiere mostrar el mensaje después de un segundo. ¿Qué tiene de malo este código?', c: `function avisar() {
+  console.log("¡Tiempo!");
+}
+setTimeout(avisar(), 1000);`, o: ['avisar() se ejecuta en el momento; hay que pasar avisar sin paréntesis', 'Nada: muestra el mensaje después de un segundo', 'setTimeout no acepta funciones con nombre', 'Falta un return dentro de avisar'],
+        w: 'Los paréntesis ejecutan la función ahí mismo, y a setTimeout le llega su resultado (undefined) en vez de la función. Lo correcto es setTimeout(avisar, 1000): se le entrega la función para que la llame después.',
+        h: 'Compará avisar con avisar().' },
+      { t: 'salida', c: `const acciones = [];
+for (let i = 0; i < 3; i++) {
+  acciones.push(() => i);
+}
+console.log(acciones[0](), acciones[2]());`, o: ['0 2', '3 3', '0 0', '2 2'],
+        w: 'Con let, cada vuelta del for tiene su propia i, y cada función recuerda la de su vuelta. Con var habría una sola i compartida y las tres funciones devolverían 3.',
+        h: 'Cada función recuerda la i de la vuelta en la que fue creada.' }
+    ] },
+  { id: 'i3', n: 'Asincronía',
+    idea: 'Algunas tareas tardan, como esperar un tiempo o pedir datos a una API. JavaScript no se queda esperando: deja la tarea pendiente, sigue con el resto del código y vuelve cuando hay resultado. Una promesa representa ese resultado futuro, y await pausa una función async hasta que llega.',
+    ej: `async function cargar() {
+  const res = await fetch("https://dummyjson.com/products/1");
+  const datos = await res.json();
+  console.log(datos.title);
+}`,
+    ojo: 'Lo que escribís debajo de una llamada asíncrona se ejecuta antes de que llegue la respuesta, salvo que uses await o .then().',
+    qs: [
+      { t: 'salida', c: `console.log("A");
+setTimeout(() => console.log("B"), 0);
+console.log("C");`, o: ['A\nC\nB', 'A\nB\nC', 'B\nA\nC', 'A\nC'],
+        w: 'Aunque el tiempo sea 0, el callback de setTimeout queda en una cola y se ejecuta recién cuando termina todo el código que está corriendo. Por eso C sale antes que B.',
+        h: 'setTimeout nunca interrumpe el código que ya se está ejecutando.' },
+      { t: 'salida', c: `const p = Promise.resolve(5);
+p.then(v => console.log(v * 2));
+console.log("fin");`, o: ['fin\n10', '10\nfin', 'fin', 'fin\n5'],
+        w: 'El callback de .then() siempre se ejecuta después de que termina el código actual, aunque la promesa ya esté resuelta. Primero sale "fin" y después 10.',
+        h: 'El .then no corre en el momento: espera a que termine lo demás.' },
+      { t: 'salida', q: '¿Qué devuelve una función async?', c: `async function dato() {
+  return 7;
+}
+const r = dato();
+console.log(r instanceof Promise);`, o: ['true', 'false', '7', 'undefined'],
+        w: 'Una función async siempre devuelve una promesa, aunque adentro diga return 7. Para obtener el 7 hay que esperarla: const r = await dato().',
+        h: 'r no es 7. ¿Qué envuelve a ese 7?' },
+      { t: 'concepto', q: 'Este código falla al ejecutarse. ¿Por qué?', c: `async function traer() {
+  const res = fetch("https://dummyjson.com/users/1");
+  const user = await res.json();
+  console.log(user.firstName);
+}`, o: ['Falta await antes de fetch: res es una promesa y no tiene .json()', 'Falta await antes de console.log', 'fetch no se puede usar dentro de una función async', 'user.firstName debería ir entre corchetes'],
+        w: 'fetch devuelve una promesa. Sin await, res es esa promesa y no la respuesta, así que res.json no existe y da TypeError. Hacen falta dos await: uno para la respuesta y otro para convertirla a JSON.',
+        h: 'Contá cuántas operaciones tardan y cuántos await hay.' },
+      { t: 'salida', c: `async function paso() {
+  console.log("1");
+  await null;
+  console.log("3");
+}
+paso();
+console.log("2");`, o: ['1\n2\n3', '1\n3\n2', '2\n1\n3', '1\n2'],
+        w: 'Una función async corre normalmente hasta su primer await. Ahí se pausa y le devuelve el control al código que la llamó, que muestra "2". Después retoma y muestra "3".',
+        h: '¿Qué pasa con el resto del programa mientras la función está pausada en el await?' }
+    ] },
+  { id: 'i4', n: 'Copias y desestructuración',
+    idea: 'El operador spread (...) desarma un arreglo u objeto para armar uno nuevo, así se copia sin tocar el original. La desestructuración saca valores de un objeto o arreglo y los guarda en variables en una sola línea.',
+    ej: `const base = { vida: 100, mana: 30 };
+const mejorado = { ...base, mana: 80 };
+const { vida, mana } = mejorado;
+console.log(vida, mana, base.mana); // 100 80 30`,
+    ojo: 'El spread copia un solo nivel. Si adentro hay otro objeto o arreglo, la copia y el original lo siguen compartiendo.',
+    qs: [
+      { t: 'salida', c: `const a = [1, 2];
+const b = [...a, 3];
+b[0] = 99;
+console.log(a, b);`, o: ['[1, 2] [99, 2, 3]', '[99, 2] [99, 2, 3]', '[1, 2] [1, 2, 3]', '[1, 2, 3] [99, 2, 3]'],
+        w: '[...a, 3] crea un arreglo nuevo con los elementos de a más el 3. Como b es otro arreglo, cambiarlo no afecta a a. Con const b = a sí se compartirían.',
+        h: '¿b es el mismo arreglo que a o uno nuevo?' },
+      { t: 'salida', c: `const user = { nombre: "Max", rol: "admin" };
+const { nombre, edad = 30 } = user;
+console.log(nombre, edad);`, o: ['Max 30', 'Max undefined', 'Max admin', 'Da error'],
+        w: 'La desestructuración busca en el objeto propiedades con esos nombres. nombre existe; edad no, así que toma el valor por defecto 30. Sin el = 30 valdría undefined.',
+        h: 'user no tiene edad. ¿Qué hace el = 30?' },
+      { t: 'salida', c: `const original = { nombre: "Robin", stats: { fuerza: 5 } };
+const copia = { ...original };
+copia.nombre = "Franky";
+copia.stats.fuerza = 9;
+console.log(original.nombre, original.stats.fuerza);`, o: ['Robin 9', 'Robin 5', 'Franky 9', 'Franky 5'],
+        w: 'El spread copia el primer nivel: nombre queda separado, por eso el original sigue siendo Robin. Pero stats es un objeto, y lo que se copió fue su referencia: los dos comparten el mismo stats.',
+        h: 'nombre es un texto; stats es un objeto dentro de otro.' },
+      { t: 'salida', c: `const [primero, , tercero] = ["oro", "plata", "bronce"];
+console.log(primero, tercero);`, o: ['oro bronce', 'oro plata', 'oro undefined', 'Da error'],
+        w: 'En los arreglos la desestructuración va por posición. La coma sin nombre saltea el segundo elemento, así que tercero toma "bronce".',
+        h: 'Entre las dos comas hay un lugar vacío.' },
+      { t: 'salida', c: `const defaults = { tema: "claro", sonido: true };
+const prefs = { tema: "oscuro" };
+const final = { ...defaults, ...prefs };
+console.log(final);`, o: ['{ tema: "oscuro", sonido: true }', '{ tema: "claro", sonido: true }', '{ tema: "oscuro" }', 'Da error: tema está repetido'],
+        w: 'Cuando una clave se repite, gana la que se escribe última. prefs va después y pisa el tema de defaults; sonido se mantiene porque prefs no lo tiene. Es el patrón típico para combinar valores por defecto con preferencias.',
+        h: 'Si una clave aparece dos veces, ¿cuál queda?' }
+    ] }
+] }
+];
+
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const NIVELES = [...FINAL, ...BASE];
+const TEMAS = NIVELES.flatMap(n => n.temas.map(t => ({...t, final: !!n.final, nivel: n.final ? n.nombre : 'Nivel ' + n.nombre.toLowerCase()})));
+const tema = id => TEMAS.find(t => t.id === id);
+const pregunta = qid => { const [tid, i] = qid.split('-'); const t = tema(tid); return t && t.qs[+i] ? {...t.qs[+i], qid, tema: t.n} : null; };
+const mezclar = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const dia = (d = new Date()) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+
+/* ---------- resaltado de código ---------- */
+const RE = /(\/\/.*)|(&quot;.*?&quot;|&#39;.*?&#39;)|\b(const|let|var|function|return|if|else|for|while|of|in|new|async|await|try|catch|throw|break|continue|typeof|instanceof)\b|\b(\d+(?:\.\d+)?|true|false|null|undefined)\b/g;
+const pintar = linea => esc(linea).replace(RE, (m, c, s, k) => `<span class="${c ? 'c' : s ? 's' : k ? 'k' : 'n'}">${m}</span>`);
+const codigo = src => `<pre class="code" tabindex="0" aria-label="Código">${src.split('\n').map(l => `<span class="l">${pintar(l) || ' '}</span>`).join('')}</pre>`;
+
+/* ---------- progreso ---------- */
+const CLAVE = 'bucle-js-v1';
+let P = {xp: 0, temas: {}, fallos: [], dia: '', racha: 0};
+let ref = null, guardando = Promise.resolve(), nube = false;
+const limpio = d => ({xp: Number(d.xp) || 0, temas: d.temas && typeof d.temas === 'object' ? JSON.parse(JSON.stringify(d.temas)) : {}, fallos: Array.isArray(d.fallos) ? d.fallos.filter(pregunta) : [], dia: d.dia || '', racha: Number(d.racha) || 0});
+function guardar() {
+  try { localStorage.setItem(CLAVE, JSON.stringify(P)); } catch {}
+  if (ref) { const copia = JSON.parse(JSON.stringify(P)); guardando = guardando.then(() => ref.set(copia)).catch(() => {}); }
+}
+async function iniciarGuardado() {
+  try { const raw = localStorage.getItem(CLAVE); if (raw) P = limpio(JSON.parse(raw)); } catch {}
+  render();
+  let db = null;
+  try { db = await window.claude?.use?.('db'); } catch {}
+  if (!db) return;
+  try {
+    ref = db.doc('progreso/jugador');
+    const s = await ref.get();
+    nube = true;
+    if (s.exists) { const d = limpio(s.data()); if (d.xp >= P.xp) P = d; else guardar(); }
+    else if (P.xp) guardar();
+    if (V.pantalla === 'mapa') render();
+  } catch { ref = null; }
+}
+
+/* ---------- estado de la partida ---------- */
+const V = {pantalla: 'mapa', ses: null};
+const estrellas = (n, total = 5) => { const r = n / total; return r >= 1 ? 3 : r >= 0.8 ? 2 : r >= 0.6 ? 1 : 0; };
+const rango = xp => xp >= 500 ? 'Maestro del bucle' : xp >= 250 ? 'Depurador' : xp >= 100 ? 'Aprendiz' : 'Novato';
+const siguiente = () => TEMAS.find(t => !P.temas[t.id]) || TEMAS.find(t => estrellas(P.temas[t.id].mejor, t.qs.length) < 3) || null;
+
+function empezar(qids, t, titulo) {
+  V.ses = {tema: t || null, titulo: titulo || '', cola: [...qids], total: qids.length, hechas: 0, primer: 0, xp: 0, fallados: [], vistos: {}, actual: null};
+  V.pantalla = t ? 'leccion' : 'pregunta';
+  if (!t) cargarPregunta();
+  render();
+}
+function cargarPregunta() {
+  const s = V.ses, q = pregunta(s.cola[0]);
+  s.actual = {q, ops: mezclar(q.o.map((txt, i) => ({txt, ok: i === 0}))), elegida: null, pista: false, reintento: !!s.vistos[q.qid]};
+}
+function responder(i) {
+  const s = V.ses, a = s.actual;
+  if (!a || a.elegida !== null) return;
+  a.elegida = i;
+  const ok = a.ops[i].ok, qid = a.q.qid;
+  if (ok) {
+    const g = a.reintento ? 4 : a.pista ? 6 : 10;
+    s.xp += g; P.xp += g; s.hechas++;
+    if (!a.reintento) s.primer++;
+    if (!a.reintento) P.fallos = P.fallos.filter(x => x !== qid);
+    s.cola.shift();
+  } else {
+    if (!s.fallados.includes(qid)) s.fallados.push(qid);
+    if (!P.fallos.includes(qid)) P.fallos.push(qid);
+    s.cola.push(s.cola.shift());
+  }
+  s.vistos[qid] = true;
+  guardar(); render();
+  const b = $('#seguir'); if (b) b.focus();
+}
+function avanzar() {
+  const s = V.ses;
+  if (!s.cola.length) return terminar();
+  cargarPregunta(); render();
+}
+function terminar() {
+  const s = V.ses, hoy = dia();
+  if (s.tema) {
+    const prev = P.temas[s.tema.id] || {mejor: 0, veces: 0};
+    P.temas[s.tema.id] = {mejor: Math.max(prev.mejor, s.primer), veces: prev.veces + 1};
+  }
+  if (P.dia !== hoy) {
+    const ayer = new Date(); ayer.setDate(ayer.getDate() - 1);
+    P.racha = P.dia === dia(ayer) ? P.racha + 1 : 1; P.dia = hoy;
+  }
+  guardar(); V.pantalla = 'fin'; render();
+}
+
+/* ---------- pantallas ---------- */
+function cabecera() {
+  const hechos = TEMAS.filter(t => P.temas[t.id]).length;
+  return `<header class="bar-top"><a class="volver" href="../">← Todos los juegos</a><h1 class="logo">Bucle<i>.js</i></h1>
+    <div class="kpis"><span class="kpi"><b>${P.xp}</b> XP · ${rango(P.xp)}</span><span class="kpi"><b>${P.racha}</b> ${P.racha === 1 ? 'día seguido' : 'días seguidos'}</span><span class="kpi"><b>${hechos}</b> de ${TEMAS.length} temas</span></div></header>`;
+}
+function tarjeta(t, sig, num) {
+  const p = P.temas[t.id], tot = t.qs.length, e = p ? estrellas(p.mejor, tot) : 0;
+  return `<button class="tema${sig && sig.id === t.id ? ' sig' : ''}" type="button" data-tema="${t.id}">
+    <span class="num">${esc(t.dif || num)}</span><span class="nom">${esc(t.n)}</span>
+    <span class="est">${p ? `<b aria-hidden="true">${'★'.repeat(e)}${'☆'.repeat(3 - e)}</b><br>Mejor: ${p.mejor} de ${tot} a la primera` : `${tot} desafíos · sin jugar`}</span></button>`;
+}
+function mapa() {
+  const sig = siguiente(), nf = P.fallos.length;
+  let n = 0;
+  const bloque = N => `<section class="nivel">
+    <div class="nivel-head"><h3>${esc(N.final ? N.nombre : 'Nivel ' + N.nombre.toLowerCase())}</h3><span>${esc(N.desc)}</span></div>
+    <div class="temas">${N.temas.map(t => tarjeta(t, sig, String(++n).padStart(2, '0'))).join('')}</div></section>`;
+  return `${cabecera()}
+  <section class="hero">
+    <div>
+      <h2>Leé el código, predecí qué hace y entendé por qué.</h2>
+      <p>${sig ? `${P.temas[sig.id] ? 'Te conviene repetir' : 'Seguís con'}: <b>${esc(sig.n)}</b>${sig.dif ? ', bloque ' + sig.dif.toLowerCase() : ''} (${esc(sig.nivel)}).` : 'Completaste todos los bloques con tres estrellas. Podés repetir cualquiera para mantenerlos frescos.'}</p>
+      <div class="cta">
+        ${sig ? `<button class="btn" type="button" data-tema="${sig.id}">${P.xp ? 'Seguir jugando' : 'Empezar'}</button>` : ''}
+        <button class="btn ghost" type="button" data-act="simulacro">Simulacro de final</button>
+        <button class="btn ghost" type="button" data-act="repaso" ${nf ? '' : 'disabled'}>${nf ? `Repasar mis errores (${nf})` : 'Sin errores para repasar'}</button>
+      </div>
+    </div>
+    ${codigo('while (aprendiendo) {\n  leer(codigo);\n  predecir();\n  entender(porQue);\n}')}
+  </section>
+  <div class="seccion"><h2>Para el final de Programación I</h2><p>Un bloque medio y uno difícil por unidad, con teoría y código del material de la cursada. El simulacro mezcla 10 preguntas y carga más las de asincronía, funciones, objetos y pruebas de escritorio.</p></div>
+  ${NIVELES.filter(N => N.final).map(bloque).join('')}
+  <div class="seccion"><h2>Práctica libre de JavaScript</h2><p>Los 12 temas originales, de básico a intermedio.</p></div>
+  ${(n = 0, NIVELES.filter(N => !N.final).map(bloque).join(''))}
+  <p class="nota">Tres estrellas = todos los desafíos del bloque resueltos al primer intento. Cuando fallás una pregunta, vuelve a aparecer hasta que la resolvés. ${nube ? 'Tu progreso se guarda en tu cuenta.' : 'Tu progreso se guarda en este navegador.'}</p>`;
+}
+function leccion() {
+  const t = V.ses.tema;
+  return `<div class="fila"><button class="btn link" type="button" data-act="salir">← Volver al mapa</button><span class="eyebrow">${esc(t.nivel)}${t.dif ? ' · ' + t.dif : ''}</span></div>
+  <article class="card">
+    <p class="eyebrow">Antes de jugar</p>
+    <h2>${esc(t.n)}</h2>
+    <p>${esc(t.idea)}</p>
+    ${t.puntos ? `<ul class="puntos">${t.puntos.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+    ${t.ej ? codigo(t.ej) : ''}
+    <div class="ojo"><b>Error frecuente.</b> ${esc(t.ojo)}</div>
+    <div class="fila"><span class="nota">Vienen ${t.qs.length} desafíos sobre este tema.</span><button class="btn" type="button" data-act="jugar" id="seguir">Empezar los desafíos</button></div>
+  </article>`;
+}
+function pantallaPregunta() {
+  const s = V.ses, a = s.actual, q = a.q, resp = a.elegida !== null, ok = resp && a.ops[a.elegida].ok;
+  const titulo = q.q || '¿Qué muestra la consola?';
+  return `<div class="fila"><button class="btn link" type="button" data-act="salir">← Salir</button>
+    <div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="${s.total}" aria-valuenow="${s.hechas}" aria-label="Desafíos resueltos"><i style="width:${Math.round(s.hechas / s.total * 100)}%"></i></div>
+    <span class="kpi">${s.hechas} de ${s.total}</span></div>
+  <article class="card">
+    <p class="eyebrow">${esc(s.tema ? s.tema.n : s.titulo + ' · ' + q.tema)}${a.reintento ? ' · segundo intento' : ''}</p>
+    <h2 class="q">${esc(titulo)}</h2>
+    ${q.c ? codigo(q.c) : ''}
+    ${q.tabla ? `<div class="traza"><table><caption>Prueba de escritorio</caption><thead><tr>${q.tabla.cols.map(c => `<th scope="col">${esc(c)}</th>`).join('')}</tr></thead><tbody>${q.tabla.filas.map(f => `<tr>${f.map(c => `<td${c === '?' ? ' class="hueco"' : ''}>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : ''}
+    <div class="ops" role="group" aria-label="Opciones">${a.ops.map((o, i) => {
+      const cls = resp ? (o.ok ? ' ok' : i === a.elegida ? ' mal' : '') : '';
+      const marca = resp ? (o.ok ? '<span class="marca">✓ Correcta</span>' : i === a.elegida ? '<span class="marca">✕ Tu respuesta</span>' : '') : '';
+      return `<button class="op${q.t === 'salida' ? ' mono' : ''}${cls}" type="button" data-op="${i}" ${resp ? 'disabled' : ''}><kbd>${i + 1}</kbd><span>${esc(o.txt)}</span>${marca}</button>`; }).join('')}</div>
+    ${!resp ? (a.pista ? `<div class="pista"><b>Pista.</b> ${esc(q.h)}</div>` : `<div class="fila"><button class="btn link" type="button" data-act="pista">Pedir una pista</button><span class="nota">Con pista sumás 6 XP en vez de 10.</span></div>`) : ''}
+    ${resp ? `<div class="fb${ok ? '' : ' mal'}" role="status"><strong>${ok ? (a.reintento ? 'Ahora sí.' : 'Correcto.') : 'No era esa.'}</strong><p>${esc(q.w)}</p>${ok ? '' : '<p style="margin-top:8px">Esta pregunta vuelve al final para que la intentes de nuevo.</p>'}</div>
+      <div class="fila"><span class="nota">${ok ? `+${a.reintento ? 4 : a.pista ? 6 : 10} XP` : ''}</span><button class="btn" type="button" data-act="seguir" id="seguir">${s.cola.length ? 'Siguiente' : 'Ver resultado'}</button></div>` : ''}
+  </article>`;
+}
+function fin() {
+  const s = V.ses, t = s.tema, e = estrellas(s.primer, s.total);
+  const prox = t ? (TEMAS[TEMAS.findIndex(x => x.id === t.id) + 1] || null) : null;
+  return `${cabecera()}
+  <article class="card">
+    <p class="eyebrow">${esc(t ? t.n : s.titulo)}</p>
+    <h2>${s.primer === s.total ? 'Todo bien al primer intento.' : s.primer >= s.total / 2 ? 'Terminado.' : 'Terminado. Este conviene repetirlo.'}</h2>
+    <div class="fila" style="justify-content:flex-start;gap:24px">
+      <div><div class="resumen-n">${s.primer}/${s.total}</div><span class="nota">a la primera</span></div>
+      <div><div class="resumen-n">+${s.xp}</div><span class="nota">XP ganados</span></div>
+      ${t ? `<div><div class="estrellas" aria-label="${e} de 3 estrellas">${'★'.repeat(e)}${'☆'.repeat(3 - e)}</div><span class="nota">en esta partida</span></div>` : ''}
+    </div>
+    ${s.fallados.length ? `<div><p style="font-weight:700;margin-bottom:8px">Lo que te costó en esta partida</p><ul class="rep">${s.fallados.map(id => { const q = pregunta(id); return `<li>${esc(q.w)}</li>`; }).join('')}</ul></div>` : ''}
+    <div class="cta">
+      ${prox ? `<button class="btn" type="button" data-tema="${prox.id}" id="seguir">Siguiente tema: ${esc(prox.n)}</button>` : ''}
+      ${t && e < 3 ? `<button class="btn sec" type="button" data-tema="${t.id}">Repetir este tema</button>` : ''}
+      <button class="btn sec" type="button" data-act="salir" ${prox ? '' : 'id="seguir"'}>Volver al mapa</button>
+    </div>
+  </article>`;
+}
+function render() {
+  $('#app').innerHTML = V.pantalla === 'leccion' ? leccion() : V.pantalla === 'pregunta' ? pantallaPregunta() : V.pantalla === 'fin' ? fin() : mapa();
+}
+function ir(p) { V.pantalla = p; render(); window.scrollTo(0, 0); }
+
+/* ---------- eventos ---------- */
+document.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || b.disabled) return;
+  if (b.dataset.tema) { const t = tema(b.dataset.tema); empezar(t.qs.map((_, i) => t.id + '-' + i), t); window.scrollTo(0, 0); return; }
+  if (b.dataset.op) return responder(+b.dataset.op);
+  const a = b.dataset.act;
+  if (a === 'salir') { V.ses = null; ir('mapa'); }
+  if (a === 'jugar') { cargarPregunta(); ir('pregunta'); }
+  if (a === 'pista') { V.ses.actual.pista = true; render(); }
+  if (a === 'seguir') { avanzar(); window.scrollTo(0, 0); }
+  if (a === 'repaso') { empezar(mezclar(P.fallos).slice(0, 8), null, 'Repaso de errores'); window.scrollTo(0, 0); }
+  if (a === 'simulacro') {
+    const CLAVE_FINAL = ['u1d', 'u3fm', 'u3fd', 'u3am', 'u3ad', 'u5m', 'u5d'];
+    const bolsa = TEMAS.filter(t => t.final).flatMap(t => t.qs.flatMap((_, i) => Array(CLAVE_FINAL.includes(t.id) ? 2 : 1).fill(t.id + '-' + i)));
+    empezar([...new Set(mezclar(bolsa))].slice(0, 10), null, 'Simulacro de final'); window.scrollTo(0, 0);
+  }
+});
+document.addEventListener('keydown', e => {
+  if (V.pantalla !== 'pregunta' || e.ctrlKey || e.metaKey || e.altKey) return;
+  const a = V.ses.actual, n = parseInt(e.key, 10);
+  if (a.elegida === null && n >= 1 && n <= a.ops.length) { e.preventDefault(); responder(n - 1); }
+});
+iniciarGuardado();
+</script>
+</body>
+</html>

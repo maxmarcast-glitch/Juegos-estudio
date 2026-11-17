@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terminal Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&family=Ubuntu+Mono:wght@400;700&family=Ubuntu+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Plan: una sola columna angosta, como una partida. Mapa de 3 niveles x 4 temas; cada tema = mini lección + 5 desafíos.
+   El código siempre va en un bloque oscuro tipo editor; el coral se reserva para la acción principal. */
+:root{
+  /* Plan: la consola del laboratorio. Berenjena de Ubuntu como primario, naranja como acción; todo el código en bloques de terminal. */
+  --bg:#F1EEF2; --surface:#FFFFFF; --surface-2:#E5DFE7; --ink:#2A1427; --muted:#655463; --line:#D6CCD8;
+  --primary:#5E2750; --on-primary:#FFFFFF; --accent:#D9481A; --on-accent:#FFFFFF;
+  --ok:#1F7A47; --ok-bg:#DDF2E5; --bad:#B42B1E; --bad-bg:#FADFDB;
+  --code-bg:#2C0F27; --code-ink:#F3E9F1; --code-k:#FFB38A; --code-s:#A8E6B9; --code-n:#FFD27A; --code-c:#B79BB1; --code-p:#FF8A5C;
+  --f-display:"Ubuntu","Ubuntu Sans",system-ui,sans-serif;
+  --f-body:"Ubuntu Sans","Ubuntu",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-code:"Ubuntu Mono",ui-monospace,Consolas,monospace;
+  --r:16px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#170A15; --surface:#22111F; --surface-2:#341C30; --ink:#F3E9F1; --muted:#BBA6B7; --line:#46283F;
+    --primary:#E0A6CF; --on-primary:#2A0B24; --accent:#FF7A4D; --on-accent:#2A0B03;
+    --ok:#7BD9A2; --ok-bg:#123726; --bad:#FFA197; --bad-bg:#4A1914;
+    --code-bg:#0F050D; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#170A15; --surface:#22111F; --surface-2:#341C30; --ink:#F3E9F1; --muted:#BBA6B7; --line:#46283F;
+  --primary:#E0A6CF; --on-primary:#2A0B24; --accent:#FF7A4D; --on-accent:#2A0B03;
+  --ok:#7BD9A2; --ok-bg:#123726; --bad:#FFA197; --bad-bg:#4A1914;
+  --code-bg:#0F050D; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.5}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.wrap{max-width:760px;margin:0 auto;padding:16px 16px 56px;display:flex;flex-direction:column;gap:20px}
+
+.bar-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.logo{font-family:var(--f-code);font-weight:700;font-size:1.35rem;letter-spacing:0;margin:0;color:var(--primary)}
+.logo i{font-style:normal;color:var(--accent)}
+.kpis{display:flex;gap:8px;flex-wrap:wrap}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:.88rem;font-weight:600;font-variant-numeric:tabular-nums}
+.kpi b{color:var(--primary)}
+
+.hero{background:var(--primary);color:var(--on-primary);border-radius:26px;padding:24px;display:grid;gap:20px;grid-template-columns:1fr}
+.hero h2{font-family:var(--f-display);font-weight:700;font-size:clamp(1.45rem,5.2vw,2.1rem);line-height:1.12;letter-spacing:-.03em;margin:0 0 10px;text-wrap:balance}
+.hero p{margin:0 0 16px;opacity:.92;max-width:44ch}
+.hero .code{margin:0;font-size:.82rem}
+.cta{display:flex;gap:10px;flex-wrap:wrap}
+@media (min-width:680px){.hero{grid-template-columns:1.25fr 1fr;align-items:center;padding:32px}}
+
+.btn{border:0;border-radius:14px;padding:13px 22px;min-height:48px;font-weight:700;background:var(--accent);color:var(--on-accent)}
+.btn.sec{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.btn.ghost{background:transparent;color:inherit;border:1.5px solid currentColor}
+.btn.link{background:none;color:var(--primary);padding:8px 4px;min-height:44px;text-decoration:underline;text-underline-offset:3px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+
+.nivel h3{font-family:var(--f-display);font-size:1.02rem;margin:0;letter-spacing:-.01em}
+.nivel-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.nivel-head span{color:var(--muted);font-size:.9rem}
+.temas{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(165px,1fr))}
+.tema{text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:6px;min-height:118px}
+.tema:hover{border-color:var(--primary)}
+.tema .num{font-family:var(--f-code);font-size:.78rem;color:var(--muted)}
+.tema .nom{font-weight:700;line-height:1.25}
+.tema .est{margin-top:auto;font-size:.85rem;color:var(--muted)}
+.tema .est b{color:var(--accent);letter-spacing:2px;font-size:1rem}
+.tema.sig{border:2px solid var(--accent)}
+.nota{color:var(--muted);font-size:.88rem;margin:0}
+.seccion{border-top:2px solid var(--ink);padding-top:14px;margin-top:8px}
+.seccion h2{font-family:var(--f-display);font-size:1.25rem;letter-spacing:-.02em;margin:0 0 4px}
+.seccion p{margin:0;color:var(--muted);font-size:.95rem;max-width:62ch}
+.puntos{margin:0;padding-left:20px;display:grid;gap:6px;font-size:.97rem;max-width:62ch}
+.traza{overflow-x:auto}
+.traza table{border-collapse:collapse;font-family:var(--f-code);font-size:.88rem;min-width:60%}
+.traza caption{caption-side:top;text-align:left;font-family:var(--f-body);font-size:.78rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);padding-bottom:6px}
+.traza th,.traza td{border:1px solid var(--line);padding:6px 12px;text-align:center;white-space:nowrap}
+.traza th{background:var(--surface-2);font-weight:600}
+.traza td.hueco{background:var(--accent);color:var(--on-accent);font-weight:700}
+
+.code{background:var(--code-bg);color:var(--code-ink);border-radius:12px;font-size:.95rem;padding:14px 14px 14px 0;font-family:var(--f-code);font-size:.88rem;line-height:1.65;overflow-x:auto;margin:0;counter-reset:ln}
+.code span.l{display:block;white-space:pre;padding-right:14px}
+.code span.l::before{counter-increment:ln;content:counter(ln);display:inline-block;width:2.4em;margin-right:.9em;text-align:right;color:var(--code-c);user-select:none}
+.code .p{color:var(--code-p);font-weight:700} .code .k{color:var(--code-k)} .code .s{color:var(--code-s)} .code .n{color:var(--code-n)} .code .c{color:var(--code-c);font-style:italic}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:20px;display:flex;flex-direction:column;gap:16px}
+.eyebrow{font-size:.78rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0}
+.card h2{font-family:var(--f-display);font-size:1.3rem;line-height:1.2;margin:0;letter-spacing:-.02em;text-wrap:balance}
+.card p{margin:0;max-width:62ch}
+.ojo{background:var(--surface-2);border-radius:12px;padding:12px 14px;font-size:.95rem}
+.ojo b{color:var(--accent)}
+.fila{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+
+.prog{height:8px;background:var(--surface-2);border-radius:99px;overflow:hidden;flex:1;min-width:120px}
+.prog i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.q{font-size:1.15rem;font-weight:700;line-height:1.3;margin:0}
+.ops{display:grid;gap:10px}
+.op{display:flex;gap:12px;align-items:flex-start;text-align:left;background:var(--bg);border:2px solid var(--line);border-radius:14px;padding:12px 14px;min-height:52px;width:100%}
+.op:hover:not([disabled]){border-color:var(--primary)}
+.op kbd{flex:none;font-family:var(--f-code);font-size:.78rem;border:1px solid var(--line);border-radius:6px;padding:1px 7px;color:var(--muted);margin-top:2px}
+.op span{white-space:pre-wrap;overflow-wrap:anywhere}
+.op.mono span{font-family:var(--f-code);font-size:.92rem}
+.op[disabled]{cursor:default;opacity:.65}
+.op.ok{border-color:var(--ok);background:var(--ok-bg);opacity:1}
+.op.mal{border-color:var(--bad);background:var(--bad-bg);opacity:1}
+.op .marca{margin-left:auto;font-weight:700;font-size:.85rem;white-space:nowrap}
+.op.ok .marca{color:var(--ok)} .op.mal .marca{color:var(--bad)}
+.sit{margin:-6px 0 0;color:var(--muted);max-width:62ch}
+.pista{background:var(--surface-2);border-radius:12px;padding:10px 14px;font-size:.95rem}
+.fb{border-radius:14px;padding:14px 16px;border-left:5px solid var(--ok);background:var(--ok-bg)}
+.fb.mal{border-color:var(--bad);background:var(--bad-bg)}
+.fb strong{display:block;margin-bottom:4px}
+.fb p{font-size:.98rem}
+
+.resumen-n{font-family:var(--f-display);font-weight:800;font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums}
+.estrellas{color:var(--accent);font-size:1.8rem;letter-spacing:6px}
+.rep{margin:0;padding-left:20px;display:grid;gap:6px;font-size:.95rem}
+@media (prefers-reduced-motion:no-preference){
+  .prog i{transition:width .35s ease}
+  .fb{animation:sube .22s ease-out}
+  @keyframes sube{from{transform:translateY(6px);opacity:.4}to{transform:none;opacity:1}}
+}
+.volver{flex-basis:100%;font-weight:700;font-size:.9rem;color:var(--muted);text-decoration:none;padding:6px 0;min-height:32px}
+.volver:hover{color:var(--ink);text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+const LAB = [
+{ id: 'm1', final: true, nombre: 'Módulo 1 · Virtualización y redes básicas', desc: 'VirtualBox, Ubuntu Server, IP, NAT, modos de red y VPS.', temas: [
+  { id: 'm1m', dif: 'Medio', n: 'Virtualización',
+    idea: 'La virtualización crea por software una computadora completa que vive dentro de otra: la máquina virtual (VM). El programa que la crea y la administra es el hypervisor. Desde adentro, la VM no sabe que es virtual.',
+    puntos: [
+      'Hypervisor Tipo 1 (bare metal): corre directo sobre el hardware (VMware ESXi, Hyper-V, KVM). Tipo 2 (hosted): corre sobre un sistema operativo ya instalado (VirtualBox).',
+      'Host o anfitrión: el sistema real de tu PC. Guest o invitado: el que corre dentro de la VM (Ubuntu Server).',
+      'ISO: imagen del instalador. VDI: formato de disco virtual de VirtualBox. Overhead: costo de rendimiento que agrega la capa de virtualización.',
+      'Ubuntu Server 24.04 LTS: sin interfaz gráfica a propósito. LTS significa cinco años de actualizaciones de seguridad.'
+    ],
+    ej: `$ whoami          # con qué usuario estás logueado
+$ pwd             # en qué directorio estás
+$ sudo apt update # actualiza la lista de paquetes
+$ uname -a        # información del sistema`,
+    ojo: 'Al restaurar un snapshot se pierde para siempre todo lo que hiciste después de tomarlo.',
+    qs: [
+      { t: 'concepto', q: 'VirtualBox es un hypervisor de tipo…', o: ['Tipo 2: corre como aplicación sobre un sistema operativo ya instalado', 'Tipo 1: corre directamente sobre el hardware, sin sistema anfitrión', 'Tipo 0: emula solo el procesador', 'No es un hypervisor: es un contenedor'],
+        w: 'Lo instalás sobre tu Windows, macOS o Linux y desde ahí creás las VMs: eso es un hypervisor Tipo 2 (hosted). Los de Tipo 1, como VMware ESXi o KVM, corren sobre el hardware sin un sistema anfitrión y se usan en servidores de producción.',
+        h: '¿Necesitaste tener un sistema operativo instalado antes de instalar VirtualBox?' },
+      { t: 'concepto', q: 'Tenés Windows en tu PC y corrés Ubuntu Server dentro de VirtualBox. ¿Cuál es el guest?', o: ['Ubuntu Server', 'Windows', 'VirtualBox', 'La ISO de Ubuntu'],
+        w: 'El guest o invitado es el sistema que corre dentro de la VM. Windows es el host o anfitrión: el sistema real de la máquina física. VirtualBox es el hypervisor que los conecta.',
+        h: 'Guest significa invitado: ¿quién está "de visita" dentro de la otra?' },
+      { t: 'concepto', q: 'Tomaste un snapshot, instalaste Apache, configuraste el sitio y después restaurás el snapshot. ¿Qué pasa?', o: ['La VM vuelve al estado del snapshot y se pierde todo lo que hiciste después', 'Se conserva Apache pero se pierde la configuración', 'Se combinan el estado del snapshot y los cambios nuevos', 'No pasa nada hasta reiniciar la VM'],
+        w: 'Un snapshot es una foto del estado completo de la VM. Restaurarlo la devuelve a ese momento exacto, y los cambios posteriores se pierden de forma permanente. Por eso conviene guardar lo importante antes de restaurar.',
+        h: 'Pensá en el snapshot como un punto de guardado de un juego.' },
+      { t: 'concepto', q: '¿Cuál de las tres opciones escala en minutos y se paga solo por lo que se usa?', o: ['La nube', 'Una máquina virtual local', 'El hardware real (bare metal)', 'Las tres por igual'],
+        w: 'En la nube (AWS, Azure, Google Cloud) se alquilan recursos y se agrandan en minutos, con pago por uso. La VM local está limitada al hardware de tu PC, y escalar hardware real implica comprar equipos.',
+        h: '¿En cuál no tenés que comprar nada para crecer?' },
+      { t: 'concepto', q: '¿Por qué Ubuntu Server no trae escritorio gráfico?', o: ['Porque los servidores no lo necesitan y una interfaz gráfica consumiría recursos', 'Porque la versión gratuita no lo incluye', 'Porque VirtualBox no puede mostrar ventanas', 'Porque se instala aparte con el snapshot'],
+        w: 'Es una decisión intencional: los servidores reales se administran por terminal, y una GUI gastaría CPU y memoria que conviene dejar para los servicios. Por eso se trabaja en la CLI, y más adelante por SSH.',
+        h: 'Pensá en qué gasta recursos sin aportar nada a un servidor.' },
+      { t: 'concepto', q: '¿Qué significa que Ubuntu 24.04 sea una versión LTS?', o: ['Que recibe actualizaciones de seguridad durante cinco años', 'Que es la versión más liviana', 'Que no necesita conexión a Internet', 'Que solo funciona en servidores'],
+        w: 'LTS es Long Term Support: soporte de largo plazo. Las versiones LTS reciben actualizaciones de seguridad durante cinco años, por eso son las que se eligen para servidores.',
+        h: 'Long Term Support.' }
+    ] },
+  { id: 'm1d', dif: 'Difícil', n: 'Redes básicas y VPS',
+    idea: 'Cada dispositivo de una red se identifica con una dirección IP. Las privadas solo existen dentro de una red local; para salir a Internet los paquetes pasan por el gateway, y NAT traduce la IP privada a una pública. En el laboratorio la VM usa dos adaptadores: NAT para Internet y Host-only para conectarse por SSH con una IP fija.',
+    puntos: [
+      'Rangos privados: 10.0.0.0/8, 172.16.0.0/12 y 192.168.0.0/16. Cualquier otra IP es pública.',
+      'En modo NAT la VM tiene una IP 10.0.2.x y su gateway es 10.0.2.2, que es el host visto desde adentro.',
+      'Puerto: el número de departamento dentro del edificio (la IP). SSH 22, HTTP 80, HTTPS 443.',
+      'VPS: una VM alquilada en un datacenter, con IP pública, disponible 24/7 y administrada por SSH.'
+    ],
+    ej: `$ ip a            # ver las IPs de la VM
+$ ip route show
+default via 10.0.2.2 dev eth0
+$ ssh alumno@192.168.56.10`,
+    ojo: 'Con NAT solo, otros equipos no pueden conectarse a la VM. Para eso hace falta Host-only, Bridged o reenvío de puertos.',
+    qs: [
+      { t: 'salida', q: '¿Cuál de estas direcciones es privada?', o: ['172.20.5.4', '172.32.1.1', '8.8.8.8', '200.45.10.3'],
+        w: 'El rango privado 172.16.0.0/12 va de 172.16.0.0 a 172.31.255.255. 172.20.5.4 cae adentro; 172.32.1.1 ya queda afuera y es pública, igual que las otras dos.',
+        h: 'El rango 172 privado va del 16 al 31 en el segundo número.' },
+      { t: 'concepto', q: 'Desde la VM ejecutás ip route show y ves "default via 10.0.2.2". ¿Qué es 10.0.2.2?', c: `$ ip route show
+default via 10.0.2.2 dev eth0`, o: ['El gateway: el host visto desde dentro de la VM en modo NAT', 'La IP pública de tu proveedor de Internet', 'La IP de la VM', 'El servidor DNS de Google'],
+        w: 'La ruta default indica a dónde se mandan los paquetes cuyo destino está fuera de la red local: el gateway. En modo NAT de VirtualBox ese gateway es 10.0.2.2, que es tu computadora real. La VM suele tener 10.0.2.15.',
+        h: 'Default via indica la puerta de salida.' },
+      { t: 'concepto', q: 'Querés que la VM salga a Internet para instalar paquetes y además conectarte por SSH desde tu PC con una IP que no cambie. ¿Qué configurás?', o: ['Adaptador 1 en NAT y adaptador 2 en Host-only', 'Un solo adaptador en NAT', 'Un solo adaptador en Red Interna', 'Adaptador 1 en Bridged y adaptador 2 en Red Interna'],
+        w: 'NAT le da salida a Internet a través del host, y Host-only crea una red privada entre la PC y las VMs con una IP fija (por ejemplo 192.168.56.10). Bridged también permite SSH, pero la IP la reparte el router por DHCP y puede cambiar.',
+        h: 'Necesitás dos cosas distintas: salida a Internet y una IP fija para SSH.' },
+      { t: 'concepto', q: 'La VM está solo en modo NAT. Un compañero, desde otra PC de la red, intenta conectarse a ella y no puede. ¿Por qué?', o: ['Con NAT la VM queda oculta detrás del host: desde afuera no se llega sin reenvío de puertos', 'Porque la VM no tiene salida a Internet', 'Porque falta instalar un navegador en la VM', 'Porque NAT solo funciona con IPv6'],
+        w: 'NAT permite que la VM salga, pero no que otros entren: es una ventaja de seguridad y una limitación. Para que otros dispositivos la vean hay que usar Bridged o configurar reenvío de puertos.',
+        h: 'NAT traduce las conexiones que salen, no las que entran.' },
+      { t: 'salida', q: 'En el comando ssh -p 2222 alumno@192.168.56.10, ¿qué indica el 2222?', c: `$ ssh -p 2222 alumno@192.168.56.10`, o: ['El puerto: SSH no está escuchando en el 22 por defecto', 'El número de intentos de conexión', 'El PID del proceso SSH', 'La contraseña del usuario alumno'],
+        w: '-p indica el puerto. SSH usa el 22 por defecto, y si el servidor escucha en otro (cambiarlo es una práctica de seguridad habitual) hay que indicarlo. alumno es el usuario y 192.168.56.10 la IP.',
+        h: 'La IP es el edificio; ¿qué número falta para llegar al departamento?' },
+      { t: 'concepto', q: '¿Cuál es la diferencia principal entre tu VM local y un VPS?', o: ['El VPS tiene IP pública y está disponible las 24 horas desde cualquier lugar', 'El VPS no se administra por SSH', 'La VM local tiene más control sobre el sistema operativo', 'El VPS no usa Linux'],
+        w: 'Las dos son máquinas virtuales que se manejan por terminal con control total. La VM local tiene una IP privada y solo funciona mientras tu PC está prendida; el VPS corre en un datacenter con IP pública fija, siempre disponible.',
+        h: 'Pensá en quién puede llegar a cada una y cuándo.' }
+    ] }
+] },
+{ id: 'm2', final: true, nombre: 'Módulo 2 · Linux y administración del sistema', desc: 'Software libre, terminal, archivos, apt, permisos, scripts y cron.', temas: [
+  { id: 'm2m', dif: 'Medio', n: 'Linux, software libre y la terminal',
+    idea: 'Linux es técnicamente el kernel, el núcleo que habla con el hardware. Junto con las herramientas del proyecto GNU forma el sistema completo, GNU/Linux. Una distribución empaqueta todo eso con un gestor de paquetes: Ubuntu y Mint usan apt.',
+    puntos: [
+      'Las cuatro libertades del software libre: usar, estudiar y modificar, distribuir, y publicar mejoras. "Free as in freedom, not free as in beer".',
+      'GPL es copyleft: lo que distribuyas basado en código GPL tiene que seguir siendo GPL. MIT y Apache son permisivas.',
+      'Terminal: la ventana. Shell: el intérprete de comandos que corre adentro (bash).',
+      'FHS: /etc guarda la configuración, /var/log los logs, /home los usuarios, /tmp lo temporal.'
+    ],
+    ej: `$ sudo apt update          # actualizar la lista de paquetes
+$ sudo apt install apache2
+$ sudo apt remove apache2  # conserva la configuración
+$ sudo apt purge apache2   # borra también la configuración`,
+    ojo: 'rm no manda nada a una papelera: lo que borrás desde la terminal se pierde.',
+    qs: [
+      { t: 'concepto', q: '¿Cuál es la diferencia entre la terminal y la shell?', o: ['La terminal es la ventana que muestra el texto; la shell es el intérprete que ejecuta los comandos', 'Son dos nombres para lo mismo', 'La shell es la ventana y la terminal es el lenguaje', 'La terminal es de Windows y la shell de Linux'],
+        w: 'Son dos capas: el emulador de terminal dibuja la ventana y el texto, y adentro corre una shell (bash, zsh, fish) que lee lo que escribís y lo ejecuta. Podés usar distintas shells en la misma terminal.',
+        h: 'Una se ve; la otra interpreta.' },
+      { t: 'concepto', q: '¿Por qué hay quienes insisten en decir "GNU/Linux"?', o: ['Porque el sistema completo es el kernel Linux más las herramientas del proyecto GNU', 'Porque GNU es la empresa dueña de Linux', 'Porque es el nombre de la versión para servidores', 'Porque Linux es solo para Android'],
+        w: 'Stallman lanzó GNU en 1983 y para 1991 tenía casi todo menos el kernel. Torvalds publicó el kernel Linux bajo la GPL y las dos piezas encajaron. Linux es solo el núcleo.',
+        h: '¿Qué aportó cada uno: Torvalds y Stallman?' },
+      { t: 'concepto', q: '¿Qué quiere decir "free as in freedom, not free as in beer"?', o: ['Que el software libre se refiere a la libertad del usuario, no al precio', 'Que el software libre siempre es gratis', 'Que solo se puede usar con fines no comerciales', 'Que no tiene licencia'],
+        w: 'En inglés "free" significa libre y también gratis. El software libre habla de las cuatro libertades. Podría cobrarse y seguir siendo libre, mientras respete esas libertades.',
+        h: 'Free tiene dos significados en inglés.' },
+      { t: 'concepto', q: 'Usás una librería con licencia GPL en un programa que vas a distribuir. ¿Qué te exige la licencia?', o: ['Que tu programa también se publique bajo GPL', 'Nada: podés cerrarlo y venderlo como privativo', 'Que pagues una licencia comercial', 'Que no lo modifiques'],
+        w: 'Eso es el copyleft: si distribuís software basado en código GPL, tu código también tiene que ser GPL, así las libertades se propagan. Con una librería MIT o Apache sí podrías usarla en un proyecto privado.',
+        h: 'Es la idea central del copyleft.' },
+      { t: 'salida', q: 'Apache dejó de funcionar y querés revisar sus registros. ¿A qué directorio vas primero?', o: ['/var/log', '/etc', '/tmp', '/usr/bin'],
+        w: 'Según el FHS, los registros del sistema y de los servicios viven en /var/log (Apache escribe en /var/log/apache2). Es la primera parada cuando algo falla. /etc tiene la configuración y /usr/bin los ejecutables.',
+        h: 'Buscás registros que cambian todo el tiempo: datos variables.' },
+      { t: 'concepto', q: '¿Qué diferencia hay entre sudo apt remove y sudo apt purge?', o: ['purge desinstala y además borra los archivos de configuración', 'remove borra la configuración y purge no', 'purge actualiza el paquete en lugar de borrarlo', 'No hay diferencia'],
+        w: 'remove desinstala el paquete pero deja su configuración, por si lo volvés a instalar. purge se lleva también la configuración. Después, apt autoremove limpia las dependencias que quedaron sin uso.',
+        h: 'Purgar es limpiar a fondo.' }
+    ] },
+  { id: 'm2d', dif: 'Difícil', n: 'Permisos, redirecciones y scripts',
+    idea: 'Cada archivo tiene permisos de lectura (r), escritura (w) y ejecución (x) para tres grupos: el dueño, el grupo y los otros. En octal, r vale 4, w vale 2 y x vale 1, y se suman. Los scripts de bash automatizan comandos y cron los ejecuta a horario.',
+    puntos: [
+      '> redirige la salida a un archivo y lo pisa; >> agrega al final; | pasa la salida de un comando al siguiente.',
+      'En bash, las comillas dobles expanden variables y las simples no. La asignación va sin espacios: nombre="Max".',
+      'Un script empieza con el shebang #!/bin/bash, necesita chmod +x y se ejecuta con ./script.sh.',
+      'cron: minuto, hora, día del mes, mes, día de la semana y comando. */5 significa "cada 5".'
+    ],
+    ej: `$ chmod 755 script.sh   # rwx r-x r-x
+$ chmod 644 index.html  # rw- r-- r--
+$ sudo chown -R www-data:www-data /var/www/html
+$ crontab -e
+*/5 * * * * /usr/local/bin/verificar_apache.sh`,
+    ojo: 'Un solo > en lugar de >> borra todo lo que el archivo tenía antes.',
+    qs: [
+      { t: 'salida', q: 'Después de este comando, ¿qué muestra ls -l en la columna de permisos?', c: `$ chmod 754 reporte.sh
+$ ls -l reporte.sh`, o: ['-rwxr-xr--', '-rwxr-xr-x', '-rw-r-xr--', '-rwxrw-r--'],
+        w: 'Cada dígito es un grupo: 7 = 4+2+1 = rwx para el dueño, 5 = 4+1 = r-x para el grupo, 4 = r-- para los otros. El guion inicial indica que es un archivo común (una d sería un directorio).',
+        h: 'Descomponé cada dígito en 4, 2 y 1.' },
+      { t: 'salida', q: 'Un archivo tiene los permisos -rw-r-----. ¿Cuál es su valor octal?', o: ['640', '644', '750', '460'],
+        w: 'Dueño rw- = 4+2 = 6. Grupo r-- = 4. Otros --- = 0. Queda 640: el dueño lee y escribe, el grupo solo lee y el resto no tiene acceso.',
+        h: 'Sumá r=4, w=2 y x=1 en cada trío.' },
+      { t: 'salida', c: `$ echo "uno" > notas.txt
+$ echo "dos" >> notas.txt
+$ echo "tres" > notas.txt
+$ cat notas.txt`, o: ['tres', 'uno\ndos\ntres', 'dos\ntres', 'uno\ndos'],
+        w: '>> agrega al final, pero el último comando usa un solo >, que pisa el archivo completo. Lo que había (uno y dos) se pierde y queda solo tres.',
+        h: 'Mirá cuántos > tiene el tercer comando.' },
+      { t: 'salida', c: `#!/bin/bash
+nombre="Max"
+echo "Hola $nombre"
+echo 'Hola $nombre'`, o: ['Hola Max\nHola $nombre', 'Hola Max\nHola Max', 'Hola $nombre\nHola Max', 'Hola $nombre\nHola $nombre'],
+        w: 'Las comillas dobles expanden las variables: $nombre se reemplaza por Max. Las comillas simples muestran el texto tal cual, signo $ incluido.',
+        h: 'Uno de los dos tipos de comillas no reemplaza nada.' },
+      { t: 'concepto', q: 'Creaste backup.sh, lo ejecutás con ./backup.sh y la terminal responde "Permission denied". ¿Qué falta?', c: `$ ./backup.sh
+bash: ./backup.sh: Permission denied`, o: ['Darle permiso de ejecución con chmod +x backup.sh', 'Ejecutarlo con sudo apt install', 'Agregarle la extensión .exe', 'Moverlo a /tmp'],
+        w: 'Un archivo recién creado no tiene permiso de ejecución. chmod +x se lo da al dueño y ahí ./backup.sh funciona. La otra opción es ejecutarlo con bash backup.sh, que no necesita ese permiso.',
+        h: '¿Cuál de los tres permisos hace falta para ejecutar?' },
+      { t: 'salida', q: '¿Cuándo se ejecuta esta tarea de cron?', c: `0 0 1 * * /usr/local/bin/limpieza_logs.sh`, o: ['El día 1 de cada mes a medianoche', 'Todos los días a la 1:00', 'Cada minuto del día 1', 'Los lunes a medianoche'],
+        w: 'Los campos son minuto (0), hora (0), día del mes (1), mes (*: todos) y día de la semana (*: todos). O sea, a las 00:00 del día 1 de cada mes.',
+        h: 'El orden es minuto, hora, día del mes, mes y día de la semana.' },
+      { t: 'concepto', q: '¿Qué hace ls /etc | wc -l?', c: `$ ls /etc | wc -l`, o: ['Cuenta cuántos archivos y carpetas hay en /etc', 'Lista /etc y lo guarda en un archivo llamado wc', 'Muestra las líneas de los archivos de /etc', 'Da error: no se pueden combinar dos comandos'],
+        w: 'El pipe | toma la salida de ls (una entrada por línea) y se la pasa como entrada a wc -l, que cuenta líneas. Encadenar programas así es una de las ideas centrales de Unix.',
+        h: 'El | conecta la salida de uno con la entrada del otro.' }
+    ] }
+] },
+{ id: 'm3', final: true, nombre: 'Módulo 3 · Redes y servidores', desc: 'SSH, modelo OSI, TCP/IP, Apache, LAMP, WordPress y códigos HTTP.', temas: [
+  { id: 'm3m', dif: 'Medio', n: 'SSH, modelo OSI y TCP/IP',
+    idea: 'El modelo OSI divide la comunicación en 7 capas. Para administrar servidores importan tres: la 3 (red, donde vive la IP), la 4 (transporte, donde viven los puertos y TCP) y la 7 (aplicación: HTTP, SSH, DNS). Los problemas se diagnostican de abajo hacia arriba.',
+    puntos: [
+      'TCP garantiza entrega y orden (SSH, HTTP, MySQL). UDP prioriza velocidad (video, juegos, DNS).',
+      'Antes de enviar datos, TCP hace el three-way handshake: SYN, SYN-ACK, ACK.',
+      'SSH cifra toda la comunicación. La primera vez guarda la huella del servidor en ~/.ssh/known_hosts.',
+      'Herramientas por capa: ping (3), ss -tlnp (4), curl (7).'
+    ],
+    ej: `$ ping 192.168.56.10        # capa 3: ¿hay conectividad IP?
+$ ss -tlnp | grep :80        # capa 4: ¿algo escucha en el 80?
+$ curl http://192.168.56.10  # capa 7: ¿la aplicación responde?`,
+    ojo: 'Si una capa falla, las de arriba tampoco funcionan. Por eso se empieza a revisar desde abajo.',
+    qs: [
+      { t: 'concepto', q: '¿En qué capa del modelo OSI viven los puertos?', o: ['Capa 4, transporte', 'Capa 3, red', 'Capa 7, aplicación', 'Capa 2, enlace'],
+        w: 'Los puertos son parte de TCP y UDP, que trabajan en la capa 4. La IP está en la capa 3, y protocolos como HTTP o SSH en la 7. Por eso, si la IP responde pero el puerto está cerrado, el problema está en la capa 4.',
+        h: 'TCP y UDP viven en la misma capa que los puertos.' },
+      { t: 'concepto', q: '¿Por qué SSH y HTTP usan TCP y no UDP?', o: ['Porque no pueden perder datos: TCP garantiza la entrega y el orden', 'Porque UDP no puede usar puertos', 'Porque TCP es más rápido que UDP', 'Porque UDP solo funciona en redes privadas'],
+        w: 'TCP divide los datos en segmentos numerados y verifica que lleguen todos y en orden. UDP es más rápido pero puede perder paquetes, y por eso se usa donde importa la velocidad, como el streaming o los juegos online.',
+        h: '¿Qué pasaría si se perdiera la mitad de un comando?' },
+      { t: 'salida', q: '¿Cuál es el orden del three-way handshake de TCP?', o: ['SYN → SYN-ACK → ACK', 'ACK → SYN → SYN-ACK', 'SYN → ACK → SYN-ACK', 'SYN-ACK → SYN → ACK'],
+        w: 'El cliente pide conectarse (SYN), el servidor acepta (SYN-ACK) y el cliente confirma (ACK). Recién ahí viajan los datos. Si el puerto no está abierto, el handshake falla y aparece "Connection refused".',
+        h: 'Primero se pide, después se acepta y por último se confirma.' },
+      { t: 'concepto', q: 'La primera vez que te conectás por SSH, te pregunta si confiás en la huella del servidor. Si respondés yes, ¿dónde la guarda?', o: ['En ~/.ssh/known_hosts de tu PC', 'En /etc/ssh/sshd_config del servidor', 'En /var/log/auth.log', 'No la guarda: pregunta siempre'],
+        w: 'La huella (fingerprint) identifica al servidor. SSH la guarda en ~/.ssh/known_hosts y en las próximas conexiones verifica que coincida. Si cambiara, avisaría: podría tratarse de otro equipo haciéndose pasar por el servidor.',
+        h: 'Es un archivo de "hosts conocidos" en tu carpeta personal.' },
+      { t: 'salida', q: '¿En qué puerto escucha MySQL por defecto en el stack LAMP?', o: ['3306', '80', '22', '443'],
+        w: 'MySQL escucha en localhost:3306. El 22 es de SSH, el 80 de HTTP (Apache) y el 443 de HTTPS.',
+        h: 'No es ninguno de los puertos web ni el de SSH.' },
+      { t: 'concepto', q: 'Un compañero dice "no puedo abrir el sitio del servidor". Siguiendo el método por capas, ¿en qué orden revisás?', o: ['ping a la IP, después ss -tlnp para ver el puerto 80 y por último curl', 'curl primero, después ping y al final ss', 'Reiniciar Apache y después ping', 'Revisar el HTML del sitio y después la red'],
+        w: 'Se va de abajo hacia arriba. Si ping no responde, el problema es de red (capa 3). Si responde pero nada escucha en el 80, es de capa 4: Apache parado. Si las dos andan, curl muestra qué devuelve la aplicación.',
+        h: 'Diagnóstico de abajo hacia arriba: red, transporte, aplicación.' }
+    ] },
+  { id: 'm3d', dif: 'Difícil', n: 'Apache, LAMP y códigos HTTP',
+    idea: 'LAMP es Linux, Apache, MySQL y PHP. Apache sirve los archivos de /var/www/html (el DocumentRoot) y corre como el usuario www-data. PHP genera contenido dinámico y MySQL guarda los datos. Los códigos HTTP indican el resultado de cada petición: 2xx éxito, 3xx redirección, 4xx error del cliente y 5xx error del servidor.',
+    puntos: [
+      'sites-available guarda todas las configuraciones; sites-enabled tiene enlaces a las activas. Se manejan con a2ensite y a2dissite.',
+      'apache2ctl configtest valida la configuración sin reiniciar el servicio.',
+      'Logs: /var/log/apache2/access.log (cada petición) y error.log (los errores).',
+      'Sin libapache2-mod-php, Apache entrega el PHP como texto. Sin php-mysql, PHP no se conecta a la base.'
+    ],
+    ej: `$ curl -I http://localhost
+HTTP/1.1 200 OK
+$ sudo tail -f /var/log/apache2/error.log
+$ sudo a2enmod rewrite && sudo systemctl restart apache2`,
+    ojo: '403 no es un problema de contraseña: es de permisos sobre los archivos.',
+    qs: [
+      { t: 'concepto', q: 'curl -I http://localhost devuelve "HTTP/1.1 403 Forbidden". ¿Cuál es la causa más probable en LAMP?', c: `$ curl -I http://localhost
+HTTP/1.1 403 Forbidden`, o: ['www-data no tiene permiso para leer los archivos de /var/www/html', 'El archivo index.html no existe', 'Apache está apagado', 'Hay un error de sintaxis en el código PHP'],
+        w: '403 significa que el servidor entiende la petición pero se niega a cumplirla. Casi siempre son permisos: se arregla con sudo chown -R www-data:www-data /var/www/html y chmod -R 755. Si el archivo no existiera sería 404, y con Apache apagado ni siquiera habría respuesta.',
+        h: 'Forbidden: prohibido. ¿Qué le prohíbe el sistema a Apache?' },
+      { t: 'concepto', q: 'La portada de WordPress carga, pero cada artículo con permalink da 404. ¿Qué falta?', o: ['Activar mod_rewrite (y AllowOverride All para que lea el .htaccess)', 'Instalar MySQL de nuevo', 'Cambiar el puerto de Apache', 'Darle permisos 777 a todo'],
+        w: 'Los permalinks como /2026/05/mi-articulo/ no son carpetas reales: WordPress los reescribe con reglas del .htaccess. Sin sudo a2enmod rewrite, o sin AllowOverride All, Apache busca esa ruta, no la encuentra y devuelve 404.',
+        h: 'Esas URL no existen como archivos: alguien tiene que reescribirlas.' },
+      { t: 'concepto', q: 'Una página PHP devuelve "500 Internal Server Error". ¿Qué hacés primero?', o: ['Leer /var/log/apache2/error.log y buscar "PHP Fatal error" o "PHP Parse error"', 'Reinstalar Apache', 'Cambiar los permisos a 777', 'Borrar la base de datos'],
+        w: '500 es un error genérico del servidor, y en LAMP casi siempre lo provoca PHP: un error de sintaxis, un plugin con fallas o falta de memoria. El detalle está en error.log, por ejemplo con sudo tail -50 /var/log/apache2/error.log.',
+        h: 'El navegador no te dice la causa; ¿quién sí la anota?' },
+      { t: 'concepto', q: '¿Qué hay en /etc/apache2/sites-enabled/?', o: ['Enlaces simbólicos a las configuraciones de sites-available que están activas', 'Copias de los archivos HTML de cada sitio', 'Los logs de cada sitio', 'Las contraseñas de los usuarios'],
+        w: 'En sites-available están todas las configuraciones de Virtual Hosts, activas o no. a2ensite crea el enlace en sites-enabled para activar una y a2dissite lo borra para desactivarla.',
+        h: 'Available es "disponible"; enabled es "habilitado".' },
+      { t: 'concepto', q: 'Abrís info.php en el navegador y en lugar de ejecutarse aparece el código fuente como texto. ¿Qué falta instalar?', o: ['libapache2-mod-php, el módulo que le permite a Apache ejecutar PHP', 'php-mysql', 'openssh-server', 'phpMyAdmin'],
+        w: 'Sin ese módulo, Apache trata el .php como un archivo de texto más y lo entrega tal cual. php-mysql es otra cosa: la extensión que le permite a PHP conectarse a la base de datos.',
+        h: 'Apache tiene que saber qué hacer con un .php.' },
+      { t: 'salida', q: 'Editaste la configuración de Apache. ¿Qué comando valida la sintaxis sin reiniciar el servicio?', o: ['sudo apache2ctl configtest', 'sudo systemctl status apache2', 'curl -I http://localhost', 'sudo a2ensite 000-default'],
+        w: 'apache2ctl configtest revisa los archivos de configuración y avisa si hay errores. Así evitás reiniciar con una configuración rota y dejar el sitio caído. Si responde "Syntax OK", recién ahí recargás.',
+        h: 'Es una prueba de la configuración.' },
+      { t: 'concepto', q: 'ping al servidor responde, pero curl http://192.168.56.10 da "Connection refused". ¿Dónde está el problema?', c: `$ curl http://192.168.56.10
+curl: (7) Failed to connect to 192.168.56.10 port 80: Connection refused`, o: ['En la capa 4: nada escucha en el puerto 80, probablemente Apache está parado', 'En la capa 3: la IP es incorrecta', 'En la capa 7: el HTML tiene errores', 'En la capa 1: el cable virtual está desconectado'],
+        w: 'Si ping responde, la red (capa 3) funciona. Connection refused significa que el handshake TCP fue rechazado porque no hay servicio en ese puerto. Se confirma con ss -tlnp | grep :80 y se arregla con sudo systemctl start apache2.',
+        h: 'La IP responde; lo que no responde es el puerto.' }
+    ] }
+] },
+{ id: 'm4', final: true, nombre: 'Módulo 4 · HTML y CSS', desc: 'Estructura, tablas, formularios, CSS, Flexbox, Grid y Mobile First.', temas: [
+  { id: 'm4m', dif: 'Medio', n: 'HTML: estructura, tablas y formularios',
+    idea: 'HTML da estructura y significado al contenido; no es un lenguaje de programación. Un elemento es la etiqueta completa con su contenido y sus atributos. Primero se resuelve la estructura y después la apariencia con CSS.',
+    puntos: [
+      'Etiquetas semánticas como header, nav, main y footer dicen qué es el contenido, no cómo se ve.',
+      'Etiquetas vacías: no tienen contenido ni cierre aparte, como img y br.',
+      'En una tabla: tr es una fila, td una celda y th una celda de encabezado. colspan y rowspan unen celdas.',
+      'En un formulario, label for debe coincidir con el id del campo, y name identifica el dato al enviarlo.'
+    ],
+    ej: `<form>
+  <label for="email">Correo</label>
+  <input type="email" id="email" name="email" required>
+  <button type="submit">Enviar</button>
+</form>`,
+    ojo: 'index.html es el archivo que el servidor busca por defecto en una carpeta.',
+    qs: [
+      { t: 'salida', q: '¿Cuál de estas etiquetas es una etiqueta vacía?', o: ['<img>', '<p>', '<table>', '<label>'],
+        w: 'Una etiqueta vacía no envuelve contenido y no tiene etiqueta de cierre aparte: img toma la imagen de su atributo src. p, table y label sí envuelven contenido y se cierran.',
+        h: '¿Cuál no necesita una etiqueta de cierre?' },
+      { t: 'concepto', q: '¿Por qué conviene usar <nav> para el menú en lugar de un <div>?', o: ['Porque comunica qué es ese contenido, cosa que aprovechan los lectores de pantalla y los buscadores', 'Porque nav se ve distinto sin CSS', 'Porque div está prohibido en HTML5', 'Porque nav hace el menú responsive'],
+        w: 'Es HTML semántico: el nombre de la etiqueta dice qué significa el contenido. Visualmente nav y div se ven igual, pero nav le indica al navegador, a los lectores de pantalla y a los buscadores que eso es navegación.',
+        h: 'Semántica tiene que ver con el significado, no con la apariencia.' },
+      { t: 'salida', q: '¿Qué hace el atributo colspan="2" en esta celda?', c: `<tr>
+  <td colspan="2">Total</td>
+  <td>$ 4500</td>
+</tr>`, o: ['Hace que la celda ocupe el ancho de dos columnas', 'Hace que ocupe dos filas', 'Duplica el contenido en dos celdas', 'Deja dos espacios antes del texto'],
+        w: 'colspan une columnas: esa celda ocupa el lugar de dos. Para unir filas se usa rowspan. Es lo que se hace, por ejemplo, en la fila de total de una tabla de precios.',
+        h: 'Col viene de columna.' },
+      { t: 'concepto', q: '¿Para qué el for del <label> tiene que coincidir con el id del <input>?', o: ['Para vincularlos: al hacer clic en el texto se enfoca el campo y los lectores de pantalla saben qué se pide', 'Para que el formulario se envíe más rápido', 'Para validar que el dato sea correcto', 'Porque el navegador da error si no coinciden'],
+        w: 'Es una cuestión de accesibilidad y usabilidad. El label queda asociado a su campo: se puede hacer clic en el texto para escribir, y quien usa un lector de pantalla escucha a qué corresponde cada campo.',
+        h: 'Pensá en alguien que no ve la pantalla.' },
+      { t: 'concepto', q: 'Tres botones de opción (radio) tienen el mismo name="talle". ¿Qué consigue eso?', o: ['Que solo se pueda elegir una opción del grupo', 'Que se puedan marcar las tres', 'Que se envíen tres datos separados', 'Nada: el name no influye'],
+        w: 'Los radio con el mismo name forman un grupo y solo uno puede estar seleccionado a la vez. Para permitir varias opciones se usan checkbox.',
+        h: 'Es la diferencia entre radio y checkbox.' },
+      { t: 'concepto', q: 'En un formulario sin backend, ¿qué pasa con los datos al apretar Enviar?', o: ['No los procesa nadie: HTML solo estructura el formulario, guardar o enviar los datos requiere código en el servidor', 'Se guardan en la base de datos automáticamente', 'Se envían por correo al dueño del sitio', 'Quedan guardados en el archivo index.html'],
+        w: 'HTML define los campos y puede validar formatos con atributos como required o type="email", pero no procesa nada. Para guardar o enviar los datos hace falta un backend, por ejemplo PHP en el servidor.',
+        h: 'HTML no tiene lógica ni cálculos.' }
+    ] },
+  { id: 'm4d', dif: 'Difícil', n: 'CSS, Flexbox, Grid y Mobile First',
+    idea: 'CSS define la apariencia sin tocar el HTML. Cuando varias reglas compiten, decide la cascada: gana el selector más específico (id, después clase, después etiqueta) y, a igual especificidad, el que está escrito último. Flexbox organiza en una dirección, Grid en filas y columnas a la vez.',
+    puntos: [
+      'Box model: content, padding, border y margin. Por defecto, width mide solo el contenido.',
+      'Flexbox: justify-content alinea sobre el eje principal y align-items sobre el cruzado. flex-direction define cuál es cuál.',
+      'Grid: fr reparte el espacio en fracciones; gap separa los elementos.',
+      'Mobile First: estilos base para pantalla chica y media queries con min-width para ir agrandando. Hace falta la meta viewport.'
+    ],
+    ej: `.servicios {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+@media (min-width: 768px) {
+  .servicios { grid-template-columns: 1fr 1fr 1fr; }
+}`,
+    ojo: 'Sin <meta name="viewport" content="width=device-width, initial-scale=1"> el celular muestra la versión de escritorio achicada.',
+    qs: [
+      { t: 'salida', q: '¿De qué color se ve el párrafo?', c: `<p id="intro" class="destacado">Bienvenidos</p>
+
+p { color: red; }
+#intro { color: green; }
+.destacado { color: blue; }`, o: ['Verde', 'Azul', 'Rojo', 'Negro'],
+        w: 'Las tres reglas apuntan al mismo párrafo, así que decide la especificidad: un id pesa más que una clase y una clase más que una etiqueta. El orden de escritura solo desempata a igual especificidad.',
+        h: 'id, clase o etiqueta: ¿cuál es más puntual?' },
+      { t: 'salida', q: 'Con el box-sizing por defecto, ¿cuánto mide de ancho la caja de borde a borde?', c: `.tarjeta {
+  width: 200px;
+  padding: 20px;
+  border: 5px solid black;
+  margin: 10px;
+}`, o: ['250px', '200px', '270px', '225px'],
+        w: 'Por defecto, width mide solo el contenido. Se suman el padding de los dos lados (40) y el borde de los dos lados (10): 200 + 40 + 10 = 250px. El margin queda afuera del borde.',
+        h: 'Sumá padding y border de los dos lados; el margin no cuenta.' },
+      { t: 'concepto', q: 'Un contenedor tiene display: flex y flex-direction: column. ¿Hacia dónde actúa justify-content: center?', o: ['Verticalmente: con column el eje principal pasa a ser vertical', 'Horizontalmente, como siempre', 'En las dos direcciones a la vez', 'No actúa: justify-content solo funciona en fila'],
+        w: 'justify-content trabaja sobre el eje principal, y flex-direction decide cuál es. En fila (row) el principal es horizontal; en columna es vertical. align-items trabaja siempre sobre el otro eje, el cruzado.',
+        h: 'justify-content sigue al eje principal.' },
+      { t: 'salida', q: 'El contenedor mide 900px de ancho y no tiene gap. ¿Cuánto mide cada columna?', c: `.contenedor {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+}`, o: ['300px y 600px', '450px y 450px', '100px y 200px', '600px y 300px'],
+        w: 'fr reparte el espacio disponible en partes proporcionales. Hay 3 partes en total (1 + 2), así que cada una vale 900 / 3 = 300px: la primera columna toma una y la segunda dos.',
+        h: 'Sumá las fracciones y dividí el ancho.' },
+      { t: 'salida', q: '¿Cuál de estas media queries corresponde a un enfoque Mobile First?', o: ['@media (min-width: 768px) { ... }', '@media (max-width: 768px) { ... }', '@media (orientation: portrait) { ... }', '@media print { ... }'],
+        w: 'En Mobile First los estilos base son para el celular y las media queries agregan cambios cuando hay más espacio: "a partir de tal ancho", o sea min-width. Con max-width se haría al revés, partiendo del escritorio.',
+        h: 'Se empieza chico y se agranda a partir de un ancho.' },
+      { t: 'salida', q: '¿De qué color se ven los párrafos?', c: `p { color: red; }
+p { color: blue; }`, o: ['Azul', 'Rojo', 'Violeta', 'Depende del navegador'],
+        w: 'Las dos reglas tienen la misma especificidad, así que gana la que está escrita después: es la cascada. Por eso conviene revisar el orden cuando un estilo "no se aplica".',
+        h: 'A igual especificidad, ¿qué decide?' }
+    ] }
+] },
+{ id: 'm5', final: true, nombre: 'Módulo 5 · Git y GitHub', desc: 'Commits, ramas, conflictos, GitHub, Pull Requests y despliegue.', temas: [
+  { id: 'm5m', dif: 'Medio', n: 'Git local y ramas',
+    idea: 'Git guarda la historia completa del proyecto como una sucesión de commits, cada uno con un hash único. Los cambios pasan por tres zonas: el working directory (tus archivos), el staging area (lo que va a entrar en el próximo commit) y el repositorio. Una rama es una línea de desarrollo paralela; técnicamente, un puntero a un commit.',
+    puntos: [
+      'git add pasa cambios al staging; git commit los confirma en la historia.',
+      'HEAD es el puntero a la rama y el commit en el que estás parado.',
+      'git switch -c crea una rama y se cambia a ella. git merge trae los commits de otra rama a la actual.',
+      '.gitignore lista lo que Git no tiene que seguir.'
+    ],
+    ej: `$ git init
+$ git add .
+$ git commit -m "Agrega la sección de servicios"
+$ git switch -c rediseño
+$ git log --oneline --graph --all`,
+    ojo: 'git commit sin git add no confirma nada: los cambios tienen que estar en el staging primero.',
+    qs: [
+      { t: 'concepto', q: '¿Cuáles son las tres zonas por las que pasa un cambio en Git?', o: ['Working directory, staging area y repositorio', 'Local, remoto y GitHub', 'main, rama y merge', 'HEAD, hash y commit'],
+        w: 'Editás en el working directory, con git add pasás los cambios al staging area y con git commit quedan guardados en el repositorio, en la historia. git status muestra en qué zona está cada cosa.',
+        h: 'Pensá en el recorrido de un archivo desde que lo editás hasta que queda en la historia.' },
+      { t: 'salida', q: 'Editaste index.html, que ya estaba en un commit anterior, y ejecutás git commit sin hacer git add. ¿Qué pasa?', c: `$ git commit -m "Cambio el título"`, o: ['No se crea ningún commit: Git avisa que no hay cambios preparados', 'Se crea el commit con el cambio', 'Se borra el cambio de index.html', 'Git hace el add automáticamente'],
+        w: 'commit solo confirma lo que está en el staging area. Como index.html no pasó por git add, Git responde que no hay nada agregado al commit y el cambio sigue en el working directory. git commit -a agregaría los archivos ya seguidos.',
+        h: '¿Qué zona confirma commit?' },
+      { t: 'concepto', q: '¿Qué es HEAD?', o: ['El puntero a la rama y el commit en el que estás trabajando', 'El primer commit del repositorio', 'La rama remota de GitHub', 'El archivo de configuración de Git'],
+        w: 'HEAD indica dónde estás parado. Cuando hacés git switch a otra rama, HEAD pasa a apuntar a esa rama, y los archivos de la carpeta cambian para mostrar su último commit.',
+        h: 'Head significa cabeza: dónde está tu atención.' },
+      { t: 'salida', q: '¿Qué comando crea la rama rediseño y te cambia a ella en un solo paso?', o: ['git switch -c rediseño', 'git branch rediseño', 'git merge rediseño', 'git switch rediseño'],
+        w: 'git branch rediseño crea la rama pero te deja en la actual. git switch rediseño se cambia a una rama que ya existe. Con -c (create) se hacen las dos cosas juntas.',
+        h: 'La c es de create.' },
+      { t: 'concepto', q: 'Creaste una rama, hiciste dos commits ahí y main no tuvo cambios. Al hacer git merge desde main, ¿qué tipo de merge ocurre?', o: ['Fast-forward: main solo adelanta su puntero hasta el último commit de la rama', 'Un merge commit con dos padres', 'Un conflicto que hay que resolver a mano', 'Ninguno: Git no deja fusionar'],
+        w: 'Como main no avanzó, no hay nada que combinar: Git mueve el puntero de main hacia adelante. El merge commit aparece cuando las dos ramas tienen commits nuevos. El conflicto, cuando además tocaron la misma línea.',
+        h: 'Si main no se movió, ¿hay algo que mezclar?' },
+      { t: 'concepto', q: '¿Para qué sirve el archivo .gitignore?', o: ['Para indicar qué archivos o carpetas Git no tiene que seguir', 'Para listar los commits que se descartan', 'Para ocultar el repositorio en GitHub', 'Para guardar las contraseñas del repositorio'],
+        w: 'En .gitignore se escriben reglas con lo que no debe entrar a la historia: archivos temporales, de configuración local, carpetas generadas o archivos con datos sensibles.',
+        h: 'Ignore: ignorar.' }
+    ] },
+  { id: 'm5d', dif: 'Difícil', n: 'Conflictos, GitHub y despliegue',
+    idea: 'GitHub aloja una copia remota del repositorio (origin). Con push subís commits, con pull los traés y con clone descargás todo con su historia. Los cambios entran a main mediante Pull Requests. En el despliegue, /var/www/html es un clon del repositorio y publicar es un git pull.',
+    puntos: [
+      'Conflicto: las dos ramas cambiaron la misma línea. Git marca el archivo con <<<<<<<, ======= y >>>>>>> y pide una decisión.',
+      'ssh-keygen genera el par de claves: la .pub se carga en GitHub y la privada no se comparte nunca.',
+      'git push -u origin main vincula la rama local con la remota; después alcanza git push.',
+      'Hay que bloquear la carpeta .git en Apache: curl -I a /.git/config tiene que dar 403.'
+    ],
+    ej: `$ ssh-keygen -t ed25519 -C "mail@ejemplo.com"
+$ git remote add origin git@github.com:usuario/pixelnorte.git
+$ git push -u origin main
+$ sudo git -C /var/www/html pull`,
+    ojo: 'git branch -D borra una rama aunque no se haya fusionado. Lo que no esté en otra rama se pierde.',
+    qs: [
+      { t: 'concepto', q: 'Después de un merge con conflicto, index.html tiene esto. ¿Qué es lo que está entre <<<<<<< HEAD y =======?', c: `<<<<<<< HEAD
+<h1>PixelNorte Estudio</h1>
+=======
+<h1>PixelNorte Diseño Web</h1>
+>>>>>>> rediseño`, o: ['La versión de la rama en la que estás parado', 'La versión de la rama rediseño', 'La versión anterior al conflicto', 'El texto que Git eligió como correcto'],
+        w: 'Lo que está arriba del ======= es la versión de HEAD, la rama actual. Lo de abajo, hasta >>>>>>>, es la de la rama que estás fusionando. Hay que editar el archivo, dejar lo que corresponda, borrar los marcadores y hacer add y commit.',
+        h: 'HEAD es donde estás vos.' },
+      { t: 'salida', q: '¿Cuántas líneas muestra el último comando y qué tipo de merge hubo?', c: `$ git init -b main
+$ git commit -m "Inicio"            # (con un archivo agregado)
+$ git switch -c rediseño
+$ git commit -am "Nuevo header"
+$ git switch main
+$ git merge rediseño
+$ git log --oneline | wc -l`, o: ['2, con un merge fast-forward', '3, con un merge commit', '1, porque el commit quedó en la otra rama', '2, con un conflicto'],
+        w: 'main no tuvo commits nuevos mientras se trabajaba en rediseño, así que el merge es fast-forward: main avanza su puntero y no se crea un commit extra. La historia queda con 2 commits: Inicio y Nuevo header.',
+        h: '¿main avanzó mientras se trabajaba en la otra rama?' },
+      { t: 'concepto', q: 'Para autenticarte en GitHub por SSH, ¿qué archivo pegás en la configuración de tu cuenta?', o: ['~/.ssh/id_ed25519.pub, la clave pública', '~/.ssh/id_ed25519, la clave privada', '~/.ssh/known_hosts', 'Los dos archivos de la clave'],
+        w: 'El par de claves funciona así: la pública (.pub) se comparte y se carga en GitHub; la privada queda solo en tu máquina y nunca se entrega. Con ssh -T git@github.com se prueba que la autenticación funcione.',
+        h: 'Una de las dos se puede mostrar a cualquiera.' },
+      { t: 'concepto', q: '¿Qué hace el -u en git push -u origin main?', o: ['Vincula la rama local con la remota, así después alcanza con git push', 'Sube solo los archivos nuevos', 'Fuerza el push aunque haya conflictos', 'Crea el repositorio en GitHub'],
+        w: '-u fija el upstream: le dice a Git que tu main local se corresponde con origin/main. Se usa en el primer push de cada rama; después git push y git pull ya saben a dónde ir.',
+        h: 'u de upstream.' },
+      { t: 'concepto', q: 'Producción es un clon del repositorio en /var/www/html. ¿Por qué hay que bloquear la carpeta .git en Apache?', o: ['Porque sin el bloqueo cualquiera podría descargar desde el navegador la historia y la configuración del repositorio', 'Porque Git deja de funcionar si Apache la lee', 'Porque ocupa mucho espacio', 'Porque el navegador no muestra el sitio si existe esa carpeta'],
+        w: 'La carpeta .git queda dentro del DocumentRoot, y Apache serviría sus archivos como cualquier otro. Con la configuración de bloqueo (a2enconf), curl -I http://localhost/.git/config tiene que devolver 403.',
+        h: 'Todo lo que está en /var/www/html se puede pedir desde el navegador.' },
+      { t: 'concepto', q: 'main está protegida con un ruleset y la bypass list vacía. ¿Cómo entra un cambio a main?', o: ['Por un Pull Request desde otra rama, porque nadie puede hacer push directo', 'Con un git push directo del dueño del repositorio', 'Con git push --force', 'Editando los archivos desde el servidor de producción'],
+        w: 'El ruleset protege la rama, y con la bypass list vacía la regla aplica a todos, el dueño incluido. El camino es trabajar en una rama, subirla y abrir un Pull Request, donde el cambio se revisa antes de fusionarlo.',
+        h: 'Bypass list vacía: nadie se saltea la regla.' },
+      { t: 'concepto', q: '¿Qué diferencia hay entre git branch -d rama y git branch -D rama?', o: ['-d solo borra una rama ya fusionada; -D la borra aunque no se haya fusionado', '-d borra la rama local y -D la remota', '-D deshace el último commit de la rama', 'No hay diferencia'],
+        w: 'Con -d Git se niega si la rama tiene commits que no están en otra rama, para que no pierdas trabajo. -D la borra igual, por eso se considera peligroso.',
+        h: 'La mayúscula fuerza.' }
+    ] }
+] },
+{ id: 'm6', final: true, nombre: 'Módulo 6 · Contenedores con Docker', desc: 'Imágenes, contenedores, puertos, volúmenes y Docker Compose.', temas: [
+  { id: 'm6m', dif: 'Medio', n: 'Contenedores e imágenes',
+    idea: 'Un contenedor empaqueta una aplicación con todo lo que necesita para correr, así se comporta igual en cualquier equipo con Docker: resuelve el "en mi máquina funciona". No es una VM chica: es un proceso aislado que comparte el kernel del host.',
+    puntos: [
+      'Imagen: plantilla de solo lectura, formada por capas. Contenedor: una instancia creada a partir de una imagen, en ejecución o detenida.',
+      'Docker Hub es el repositorio público de imágenes; de ahí se descargan con pull.',
+      'Una VM tiene su propio sistema operativo y kernel, ocupa gigabytes y tarda minutos. Un contenedor arranca en segundos y ocupa mucho menos.',
+      'En Windows o macOS, Docker Desktop crea una VM liviana con Linux para correr los contenedores.'
+    ],
+    ej: `$ docker run hello-world
+$ docker images     # imágenes descargadas
+$ docker ps -a      # contenedores, también los detenidos`,
+    ojo: 'Borrar un contenedor no borra la imagen, y la capa de escritura del contenedor se pierde al borrarlo.',
+    qs: [
+      { t: 'concepto', q: '¿Cuál es la diferencia fundamental entre una máquina virtual y un contenedor?', o: ['El contenedor comparte el kernel del host; la VM tiene su propio sistema operativo con su kernel', 'El contenedor emula hardware completo', 'La VM arranca en segundos y el contenedor en minutos', 'No hay diferencia: un contenedor es una VM más chica'],
+        w: 'La VM emula una computadora entera, con sistema operativo y kernel propios. El contenedor es un proceso aislado con su propio sistema de archivos que usa el kernel del host. Por eso es más liviano y rápido, aunque con menos aislamiento.',
+        h: '¿Cuál de los dos trae su propio sistema operativo?' },
+      { t: 'concepto', q: '¿Qué relación hay entre una imagen y un contenedor?', o: ['La imagen es la plantilla de solo lectura; el contenedor es una instancia creada a partir de ella', 'Son lo mismo', 'El contenedor es la plantilla y la imagen la copia en ejecución', 'La imagen es el backup de un contenedor'],
+        w: 'Se parece a la relación entre una clase y sus objetos: de una misma imagen se crean muchos contenedores. La imagen está formada por capas de solo lectura y cada contenedor agrega su propia capa donde puede escribir.',
+        h: 'Uno es el molde.' },
+      { t: 'concepto', q: 'Ejecutaste docker run hello-world tres veces. ¿Cuántas imágenes y cuántos contenedores tenés?', o: ['Una imagen y tres contenedores', 'Tres imágenes y tres contenedores', 'Una imagen y un contenedor', 'Tres imágenes y ningún contenedor'],
+        w: 'La imagen se descargó la primera vez; las otras dos ejecuciones la reutilizaron, por eso fueron más rápidas. Cada docker run crea un contenedor nuevo, así que hay tres (detenidos, porque hello-world termina enseguida).',
+        h: 'run crea un contenedor nuevo cada vez.' },
+      { t: 'concepto', q: '¿Qué es Docker Hub?', o: ['El repositorio público de imágenes de Docker', 'El programa que ejecuta los contenedores', 'Un panel para administrar las VMs', 'El archivo de configuración de Compose'],
+        w: 'Docker Hub aloja imágenes oficiales como nginx, mysql o php. Cuando una imagen no está en el equipo, Docker la descarga de ahí (pull). El que crea y corre los contenedores es Docker Engine, con su daemon.',
+        h: 'Es el lugar de donde salen las imágenes.' },
+      { t: 'concepto', q: '¿Por qué en Windows Docker Desktop necesita crear una VM liviana con Linux?', o: ['Porque un contenedor de Linux necesita un kernel Linux y Windows no lo tiene', 'Porque Docker no puede instalarse en Windows', 'Porque los contenedores siempre corren dentro de una VM', 'Para tener interfaz gráfica'],
+        w: 'Los contenedores comparten el kernel del host. Un contenedor Linux necesita un kernel Linux, así que en Windows o macOS se crea una VM liviana que lo aporte. En la VM de Ubuntu del curso no hace falta: el host ya es Linux.',
+        h: '¿De quién es el kernel que usan los contenedores?' },
+      { t: 'concepto', q: '¿Qué problema resume la frase "en mi máquina funciona"?', o: ['Que un sitio instalado a mano puede fallar en otro equipo por diferencias de versiones o configuración', 'Que el código tiene errores de sintaxis', 'Que la PC del desarrollador es más rápida que el servidor', 'Que falta conexión a Internet en producción'],
+        w: 'Cuando todo se instala a mano, las dependencias, versiones y configuraciones dependen de cada servidor. El contenedor empaqueta la aplicación con lo que necesita, así se comporta igual en cualquier equipo con Docker.',
+        h: 'Es el problema que vienen a resolver los contenedores.' }
+    ] },
+  { id: 'm6d', dif: 'Difícil', n: 'Manejar contenedores y Compose',
+    idea: 'docker run crea y arranca un contenedor; después se maneja por su nombre con stop, start, rm y logs. Con -p se publica un puerto y con -v se monta una carpeta. Docker Compose describe varios servicios en un archivo compose.yaml y los levanta juntos.',
+    puntos: [
+      '-p 8080:80 conecta el puerto 8080 de la VM con el 80 del contenedor.',
+      'docker stop deja el contenedor en estado Exited: sigue existiendo y docker start lo vuelve a arrancar.',
+      'En YAML la sangría define la estructura y va con espacios, nunca con tabulaciones.',
+      'Un volumen con nombre sobrevive al borrado de los contenedores. depends_on ordena el arranque pero no espera a que el otro servicio esté listo.'
+    ],
+    ej: `services:
+  pixelnorte:
+    image: nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ../sitio:/usr/share/nginx/html:ro
+    restart: unless-stopped`,
+    ojo: 'docker run crea uno nuevo cada vez. Para volver a usar uno que ya existe, docker start.',
+    qs: [
+      { t: 'concepto', q: 'Ejecutaste docker run -d --name web -p 8080:80 nginx. En el navegador abrís http://IP-de-la-VM:8080. ¿A qué llegás?', c: `$ docker run -d --name web -p 8080:80 nginx`, o: ['A nginx, que escucha en el puerto 80 dentro del contenedor', 'A Apache, instalado en la VM', 'A ningún lado: hay que abrir el puerto 80', 'Al puerto 8080 dentro del contenedor'],
+        w: 'El formato es -p puerto_de_la_VM:puerto_del_contenedor. El 8080 de la VM se conecta con el 80 del contenedor, donde escucha nginx. Se usa 8080 porque el 80 de la VM lo ocupa Apache desde el Módulo 3.',
+        h: 'El primer número es de la VM, el segundo del contenedor.' },
+      { t: 'concepto', q: 'Ya tenés un contenedor llamado web y volvés a ejecutar docker run -d --name web nginx. ¿Qué pasa?', o: ['Docker da un error de conflicto: el nombre ya está en uso', 'Reinicia el contenedor existente', 'Crea otro contenedor con el mismo nombre', 'Reemplaza el contenedor viejo por uno nuevo'],
+        w: 'run siempre crea un contenedor nuevo, y dos contenedores no pueden llamarse igual. Para reusar el existente se usa docker start web; para crearlo de cero, primero docker rm -f web.',
+        h: '¿run crea o reusa?' },
+      { t: 'salida', q: 'Hiciste docker stop web. ¿Cuál de estos comandos todavía lo muestra en la lista?', o: ['docker ps -a', 'docker ps', 'docker images', 'docker logs'],
+        w: 'docker stop lo detiene y queda en estado Exited, pero sigue existiendo. docker ps solo lista los que están corriendo; con -a aparecen todos, también los detenidos. docker images lista imágenes, no contenedores.',
+        h: 'Detenido no es lo mismo que borrado.' },
+      { t: 'concepto', q: 'En el volumen ../sitio:/usr/share/nginx/html:ro, ¿qué significa el :ro?', o: ['Que el contenedor puede leer los archivos pero no modificarlos', 'Que la carpeta es de root', 'Que se copia una sola vez al crear el contenedor', 'Que el volumen se borra al reiniciar'],
+        w: 'ro es read only, solo lectura. Es un bind mount: la carpeta del host se ve dentro del contenedor y los cambios que hagas en el host aparecen al instante, pero nginx no puede escribir en ella.',
+        h: 'ro: read only.' },
+      { t: 'concepto', q: 'docker compose up -d da un error de formato al leer compose.yaml. ¿Qué revisás primero?', o: ['La sangría: que use espacios y no tabulaciones, y que cada clave esté en su nivel', 'Que el archivo se llame docker-compose.exe', 'Que Docker esté actualizado', 'Que la imagen exista en Docker Hub'],
+        w: 'En YAML la sangría define qué pertenece a qué, y una tabulación produce error al leer el archivo. Por convención se usan dos espacios por nivel. Es lo primero que conviene mirar ante un error de formato.',
+        h: 'YAML organiza la información por niveles.' },
+      { t: 'concepto', q: 'En el compose del stack LAMP, el servicio web tiene depends_on: db. ¿Qué garantiza?', o: ['Que web arranca después que db, pero no que la base ya esté lista para recibir conexiones', 'Que web espera a que MySQL termine de inicializarse', 'Que los dos servicios comparten el mismo contenedor', 'Que si db falla, web no se crea'],
+        w: 'depends_on solo ordena el arranque. MySQL puede tardar unos segundos en estar listo después de arrancar, así que la aplicación puede intentar conectarse antes de tiempo.',
+        h: 'Arrancar no es lo mismo que estar listo.' },
+      { t: 'concepto', q: 'Los datos de MySQL están en un volumen con nombre. Hacés docker compose down y después up. ¿Qué pasa con los datos?', o: ['Siguen estando: el volumen con nombre sobrevive al borrado de los contenedores', 'Se pierden, porque down borra los contenedores', 'Se guardan solo si la imagen es oficial', 'Quedan en la capa de escritura del contenedor'],
+        w: 'Un volumen con nombre lo administra Docker aparte de los contenedores. down borra los contenedores, pero no los volúmenes salvo que se lo pidas, así que al volver a levantar la base recupera sus datos.',
+        h: 'Por eso se usa un volumen para la base de datos.' }
+    ] }
+] }
+];
+
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const PRACTICA = [
+{ mod: 'm1', tema: { id: 'm1p', dif: 'Práctica', n: 'Crear la VM e instalar Linux',
+  idea: 'Ejercicios sacados de las guías paso a paso del Módulo 1 y del TP N.° 1: crear la máquina virtual en VirtualBox, instalar Linux Mint y dejar el sistema listo para trabajar. En cada pregunta ves dónde estás parado y elegís el paso que sigue.',
+  puntos: [
+    'Orden de la guía: Nueva → nombre, carpeta e ISO → RAM y CPU → disco → instalar → expulsar la ISO → primer arranque.',
+    'Configuración recomendada: 2048 MB de RAM, 1 o 2 núcleos y 20 GB de disco VDI con asignación dinámica.',
+    'Snapshot antes de cualquier cambio importante; el de instalación limpia, con la VM apagada.'
+  ],
+  ej: `$ sudo apt update && sudo apt upgrade -y
+$ ping -c 4 google.com
+$ uname -a`,
+  ojo: 'El modo Live corre desde la ISO y no toca el disco: todavía no instalaste nada.',
+  qs: [
+    { t: 'concepto', q: '¿Qué paso sigue?', s: 'En el asistente de VirtualBox ya cargaste el nombre de la VM, la carpeta y la ISO. La pantalla siguiente pide el hardware.', o: ['Asignar 2048 MB de RAM y 1 o 2 núcleos de CPU', 'Asignar toda la RAM de la PC para que ande más rápido', 'Saltear el hardware y arrancar la VM', 'Elegir 16 MB de RAM, como la memoria de video'],
+      w: 'La guía recomienda 2048 MB (el mínimo es 1024) y 1 o 2 núcleos. No conviene darle todo a la VM: el host también necesita memoria para seguir funcionando, como explicaste en tu TP N.° 1.',
+      h: 'Hay que dejarle recursos al host.' },
+    { t: 'concepto', q: '¿Qué hacés con la opción "Proceed with Unattended Installation"?', s: 'En el paso de nombre e ISO, VirtualBox ofrece instalar el sistema solo, sin preguntarte nada.', o: ['La desactivo para hacer la instalación manual y aprender el proceso completo', 'La dejo activada: la guía la exige', 'La activo para que también tome un snapshot', 'No importa: no cambia nada'],
+      w: 'Con la instalación desatendida VirtualBox resuelve todo solo y te perdés los pasos. La guía pide desactivarla para ver idioma, teclado, particionado, zona horaria y usuario.',
+      h: 'El objetivo es aprender el proceso.' },
+    { t: 'concepto', q: '¿Qué paso sigue?', s: 'Arrancaste la VM, elegiste "Start Linux Mint" y apareció el escritorio.', o: ['Doble clic en "Install Linux Mint": todavía estás en modo Live, sin instalar', 'Empezar a trabajar: el sistema ya quedó instalado', 'Tomar un snapshot de la instalación limpia', 'Expulsar la ISO'],
+      w: 'Ese escritorio es el modo Live: Linux Mint corre desde la ISO para que lo pruebes y no modifica el disco. Para instalarlo de verdad se abre el instalador desde el ícono del escritorio.',
+      h: 'Live significa que corre desde la ISO.' },
+    { t: 'concepto', q: '¿Qué paso sigue?', s: 'Terminó la instalación y tocaste "Reiniciar ahora". El sistema pide retirar el medio de instalación.', o: ['Expulsar la ISO de la unidad virtual y presionar Enter', 'Volver a arrancar desde la ISO', 'Apagar la VM y borrar el disco', 'Crear otra máquina virtual'],
+      w: 'Si la ISO sigue montada, la VM puede volver a arrancar el instalador en lugar del sistema instalado. Se expulsa el medio y el siguiente arranque carga Linux Mint desde el disco virtual.',
+      h: '¿Desde dónde querés que arranque ahora?' },
+    { t: 'sigue', s: 'Primer ingreso al sistema recién instalado. Antes de instalar cualquier cosa, actualizás.', c: `alumno@mint:~$ whoami
+alumno
+$ ___`, o: ['sudo apt update && sudo apt upgrade -y', 'sudo apt install update', 'apt upgrade', 'sudo reboot'],
+      w: 'update refresca la lista de paquetes disponibles y upgrade instala las actualizaciones pendientes. && ejecuta el segundo solo si el primero salió bien, y -y responde que sí a las confirmaciones. Sin sudo, apt no tiene permiso para instalar.',
+      h: 'Primero la lista, después las actualizaciones.' },
+    { t: 'sigue', s: 'Querés comprobar que la VM sale a Internet a través de NAT.', c: `$ ip a
+$ ___`, o: ['ping -c 4 google.com', 'ssh google.com', 'curl -I 10.0.2.15', 'ping -c 4 localhost'],
+      w: 'ping manda paquetes al destino y muestra si vuelven. -c 4 envía cuatro y termina. Hacer ping a localhost solo prueba la interfaz interna de la propia VM, no la salida a Internet.',
+      h: 'Tenés que probar contra algo que esté fuera de la VM.' },
+    { t: 'concepto', q: '¿Qué paso sigue?', s: 'Linux Mint quedó instalado y actualizado. Mañana vas a experimentar con comandos que no conocés.', o: ['Apagar la VM y tomar un snapshot con un nombre como "Instalación limpia"', 'Exportar la VM a un pendrive', 'Instalar otra VM igual por si acaso', 'Nada: si algo se rompe se reinstala'],
+      w: 'Es la regla de oro del laboratorio: snapshot antes de cualquier cambio importante. Tarda segundos y, si algo sale mal, volvés a ese punto exacto. La guía recomienda hacer el de instalación limpia con la VM apagada.',
+      h: 'Es la red de seguridad del laboratorio.' }
+  ] } },
+{ mod: 'm2', tema: { id: 'm2p', dif: 'Práctica', n: 'Administrar el servidor de PixelNorte',
+  idea: 'Ejercicios del Laboratorio de práctica de terminal, del laboratorio en clase y del TP N.° 2: armar la estructura de proyectos de PixelNorte, mover y copiar archivos, procesar texto con pipes, corregir permisos y automatizar un informe con cron.',
+  puntos: [
+    'mkdir -p crea toda la ruta; con llaves {a,b,c} se crean varias carpetas en un solo comando.',
+    '> sobreescribe, >> agrega. cp -r copia carpetas completas y diff compara archivos.',
+    'Permisos del TP N.° 2: 644 para HTML y CSS, 755 para carpetas, 700 para backups.'
+  ],
+  ej: `$ mkdir -p ~/proyectos/cliente_uno/{web,css,js,img,docs}
+$ find ~/proyectos -name '*.html' | wc -l
+$ crontab -l`,
+  ojo: 'En el ejercicio 4, la segunda línea del log va con >>. Con > se borra la primera.',
+  qs: [
+    { t: 'sigue', s: 'Tenés que crear ~/proyectos/cliente_uno con las subcarpetas web, css, js, img y docs, en un solo comando. ~/proyectos todavía no existe.', c: `$ cd ~
+$ ___`, o: ['mkdir -p ~/proyectos/cliente_uno/{web,css,js,img,docs}', 'mkdir ~/proyectos/cliente_uno/{web,css,js,img,docs}', 'mkdir -p ~/proyectos/cliente_uno/web css js img docs', 'touch ~/proyectos/cliente_uno/{web,css,js,img,docs}'],
+      w: '-p crea también las carpetas intermedias que falten (proyectos y cliente_uno), y las llaves generan las cinco rutas. Sin -p falla porque ~/proyectos no existe. Sin llaves, css, js y demás se crearían en la carpeta actual. touch crea archivos, no carpetas.',
+      h: 'Hacen falta las carpetas intermedias y las cinco subcarpetas.' },
+    { t: 'sigue', s: 'Ejercicio 4: acceso.log ya tiene la primera línea. Hay que agregar la segunda sin abrir un editor y sin borrar la primera.', c: `$ echo "2026-04-14 21:00 - Conexión establecida" > ~/servidor/logs/acceso.log
+$ ___`, o: ['echo "2026-04-14 21:05 - Usuario alumno ingresó" >> ~/servidor/logs/acceso.log', 'echo "2026-04-14 21:05 - Usuario alumno ingresó" > ~/servidor/logs/acceso.log', 'cat "2026-04-14 21:05 - Usuario alumno ingresó" >> ~/servidor/logs/acceso.log', 'echo "2026-04-14 21:05 - Usuario alumno ingresó" | ~/servidor/logs/acceso.log'],
+      w: '>> agrega al final y conserva lo anterior; con > se pisaría la primera línea y la verificación (exactamente 2 líneas) fallaría. cat espera un nombre de archivo, no un texto, y el pipe necesita un comando del otro lado.',
+      h: 'Es la pista del ejercicio: una redirección sobreescribe y la otra agrega.' },
+    { t: 'sigue', s: 'Ejercicio 8: servidores.txt tiene seis servidores, uno por línea. Hay que contar solo los que empiezan con web.', c: `$ cat ~/servidores.txt
+web01.pixelnorte.com
+db01.pixelnorte.com
+web02.pixelnorte.com
+backup01.pixelnorte.com
+web03.pixelnorte.com
+db02.pixelnorte.com
+$ ___`, o: ["grep '^web' ~/servidores.txt | wc -l", 'wc -l ~/servidores.txt', "grep 'web' ~/servidores.txt > wc -l", 'sort ~/servidores.txt | wc -l'],
+      w: "grep '^web' se queda con las líneas que empiezan con web y wc -l las cuenta: 3. wc -l solo cuenta todas (6). Con > en lugar de |, la salida de grep se guardaría en un archivo llamado wc.",
+      h: 'Primero filtrar, después contar, conectados con un pipe.' },
+    { t: 'sigue', s: 'Ejercicio 8, paso 7: guardar la lista ordenada alfabéticamente en un archivo nuevo.', c: `$ sort ~/servidores.txt
+$ ___`, o: ['sort ~/servidores.txt > ~/servidores_ordenados.txt', 'sort ~/servidores.txt | ~/servidores_ordenados.txt', 'mv ~/servidores.txt ~/servidores_ordenados.txt', 'sort > ~/servidores.txt ~/servidores_ordenados.txt'],
+      w: 'sort muestra la lista ordenada por pantalla y > manda esa salida a un archivo nuevo. El original no cambia. mv solo renombraría el archivo sin ordenarlo, y un pipe necesita un comando del otro lado, no un archivo.',
+      h: 'La salida de sort tiene que ir a un archivo.' },
+    { t: 'sigue', s: 'Ejercicio 9: le quitaste todos los permisos a app.conf y al intentar leerlo aparece el error esperado. Ahora tenés que poder leerlo y escribirlo.', c: `$ chmod 000 ~/temp_config/app.conf
+$ cat ~/temp_config/app.conf
+cat: /home/alumno/temp_config/app.conf: Permission denied
+$ ___`, o: ['chmod 644 ~/temp_config/app.conf', 'sudo cat ~/temp_config/app.conf', 'rm ~/temp_config/app.conf', 'chmod 000 ~/temp_config/app.conf'],
+      w: '644 le devuelve al dueño lectura y escritura (6) y deja solo lectura al resto (4). sudo cat lo leería, pero no corrige los permisos, y el ejercicio se hace sin sudo. Borrarlo no es corregirlo.',
+      h: 'El problema son los permisos: hay que cambiarlos.' },
+    { t: 'sigue', s: 'TP N.° 2, paso 3: la carpeta backups tiene que quedar accesible solo para el dueño.', c: `$ ls -la ~/servidor/
+drwxr-xr-x  2 alumno alumno 4096 abr 14 backups
+$ ___`, o: ['chmod 700 ~/servidor/backups', 'chmod 755 ~/servidor/backups', 'chmod 600 ~/servidor/backups', 'chown root ~/servidor/backups'],
+      w: '700 es rwx para el dueño y nada para grupo y otros. En una carpeta hace falta la x para poder entrar, por eso 600 no sirve: ni el dueño podría hacer cd. 755 la deja abierta a todos.',
+      h: 'En una carpeta, sin x no se puede entrar.' },
+    { t: 'sigue', s: 'TP N.° 2, paso 6: el informe tiene que generarse cada 2 minutos y guardarse en el log. Abriste el editor de la crontab. ¿Qué línea agregás?', c: `$ crontab -e
+# ___`, o: ['*/2 * * * * ~/servidor/scripts/informe_servidor.sh >> ~/servidor/logs/informe.log 2>&1', '2 * * * * ~/servidor/scripts/informe_servidor.sh >> ~/servidor/logs/informe.log 2>&1', '*/2 * * * * ~/servidor/scripts/informe_servidor.sh > ~/servidor/logs/informe.log', '* * * * */2 ~/servidor/scripts/informe_servidor.sh >> ~/servidor/logs/informe.log'],
+      w: '*/2 en el campo de minutos significa cada 2 minutos. >> acumula una ejecución tras otra y 2>&1 guarda también los errores. Con un 2 solo correría en el minuto 2 de cada hora, y */2 en el último campo se refiere a los días de la semana.',
+      h: 'El primer campo es el de los minutos.' }
+  ] } },
+{ mod: 'm3', tema: { id: 'm3p', dif: 'Práctica', n: 'Montar el stack LAMP',
+  idea: 'Ejercicios con los pasos que se hacen en las clases 3 a 5 del Módulo 3: instalar Apache, publicar una página, crear la base y el usuario en MySQL, sumar PHP e instalar WordPress. No hay un PDF de laboratorio de este módulo: las secuencias salen del material de lectura.',
+  puntos: [
+    'Después de instalar o configurar un servicio: verificar con systemctl status y curl.',
+    'Base de WordPress: CREATE DATABASE, CREATE USER, GRANT y FLUSH PRIVILEGES.',
+    'phpinfo.php sirve para diagnosticar y se borra enseguida: nunca queda en producción.'
+  ],
+  ej: `$ sudo apt install apache2
+$ sudo systemctl status apache2
+$ curl -I http://localhost
+HTTP/1.1 200 OK`,
+  ojo: 'sudo echo "texto" > archivo falla: la redirección la hace tu shell, que no tiene permisos de root.',
+  qs: [
+    { t: 'sigue', s: 'Acabás de instalar Apache. Antes de probar con curl, querés confirmar que el servicio quedó corriendo.', c: `$ sudo apt update
+$ sudo apt install apache2
+$ ___`, o: ['sudo systemctl status apache2', 'sudo apache2ctl configtest', 'sudo a2ensite apache2', 'ss -tlnp | grep :22'],
+      w: 'systemctl status muestra si el servicio está active (running). Si dice inactive, se arranca con sudo systemctl start apache2. configtest valida la configuración, pero no dice si Apache está corriendo.',
+      h: 'Los servicios se administran con systemctl.' },
+    { t: 'sigue', s: 'Querés reemplazar la página por defecto con una línea de texto, sin abrir nano. /var/www/html/index.html pertenece a root.', c: `$ cat /var/www/html/index.html
+$ ___`, o: ["echo 'Hola desde mi servidor' | sudo tee /var/www/html/index.html", "sudo echo 'Hola desde mi servidor' > /var/www/html/index.html", "echo 'Hola desde mi servidor' >> index.html", "cat 'Hola desde mi servidor' /var/www/html/index.html"],
+      w: 'tee escribe en el archivo lo que recibe por el pipe, y al correr con sudo tiene permiso sobre /var/www/html. En sudo echo ... > archivo, el sudo solo afecta a echo: la redirección la hace tu shell sin privilegios y da Permission denied.',
+      h: '¿Quién hace realmente la escritura cuando usás >?' },
+    { t: 'sigue', s: 'Estás en la consola de MySQL preparando la base de WordPress.', c: `mysql> CREATE DATABASE wordpress_db;
+mysql> CREATE USER 'wp_user'@'localhost' IDENTIFIED BY 'wp_password_2026';
+mysql> ___`, o: ["GRANT ALL PRIVILEGES ON wordpress_db.* TO 'wp_user'@'localhost';", 'FLUSH PRIVILEGES;', 'SHOW DATABASES;', "CREATE TABLE wp_user;"],
+      w: 'El usuario existe pero todavía no puede hacer nada con la base: GRANT le da los permisos sobre wordpress_db. Recién después va FLUSH PRIVILEGES, que hace que MySQL recargue la tabla de permisos.',
+      h: 'El usuario existe, pero ¿sobre qué tiene permisos?' },
+    { t: 'sigue', s: 'Instalaste PHP con el módulo para Apache y la extensión de MySQL. Para que Apache cargue el módulo nuevo…', c: `$ sudo apt install php libapache2-mod-php php-mysql
+$ ___`, o: ['sudo systemctl restart apache2', 'sudo systemctl restart mysql', 'sudo a2ensite php', 'sudo rm /var/www/html/index.html'],
+      w: 'Apache lee sus módulos al arrancar, así que después de instalar libapache2-mod-php hay que reiniciarlo. Recién ahí ejecuta los archivos .php en lugar de entregarlos como texto.',
+      h: 'El módulo nuevo es de Apache.' },
+    { t: 'sigue', s: 'Verificaste la integración de PHP con Apache usando phpinfo.', c: `$ echo '<?php phpinfo(); ?>' | sudo tee /var/www/html/phpinfo.php
+$ curl http://localhost/phpinfo.php | head -5
+$ ___`, o: ['sudo rm /var/www/html/phpinfo.php', 'sudo chmod 777 /var/www/html/phpinfo.php', 'sudo cp /var/www/html/phpinfo.php /var/www/html/index.php', 'sudo systemctl stop apache2'],
+      w: 'phpinfo() muestra toda la configuración del servidor: versiones, rutas, módulos. Es útil para diagnosticar, pero dejarlo publicado le da información a cualquiera. Por eso se borra apenas termina la prueba.',
+      h: '¿Qué le mostraría ese archivo a cualquier visitante?' },
+    { t: 'sigue', s: 'Descargaste WordPress en /tmp. Ahora hay que sacar los archivos del comprimido.', c: `$ cd /tmp
+$ wget https://wordpress.org/latest.tar.gz
+$ ___`, o: ['tar -xzf latest.tar.gz', 'unzip latest.tar.gz', 'tar -czf latest.tar.gz', 'cat latest.tar.gz'],
+      w: '-x extrae, -z descomprime gzip y -f indica el archivo. Con -c en lugar de -x se crearía un comprimido nuevo. Al terminar queda la carpeta wordpress/, que después se copia a /var/www/html.',
+      h: 'x de extraer.' },
+    { t: 'sigue', s: 'Los permalinks de WordPress dan 404. Activaste mod_rewrite y pusiste AllowOverride All en el VirtualHost. Antes de reiniciar Apache…', c: `$ sudo a2enmod rewrite
+$ sudo nano /etc/apache2/sites-available/000-default.conf
+$ ___`, o: ['sudo apache2ctl configtest', 'sudo systemctl stop apache2', 'sudo a2dissite 000-default.conf', 'sudo rm /var/www/html/.htaccess'],
+      w: 'Editaste un archivo de configuración a mano: configtest revisa la sintaxis sin tocar el servicio. Si responde Syntax OK, recién ahí sudo systemctl restart apache2. Así no dejás el sitio caído por un error de tipeo.',
+      h: 'Antes de reiniciar, conviene validar lo que editaste.' }
+  ] } },
+{ mod: 'm4', tema: { id: 'm4p', dif: 'Práctica', n: 'Armar y vestir el sitio de PixelNorte',
+  idea: 'Ejercicios de los dos laboratorios del Módulo 4: el sitio de tres páginas en HTML (Inicio, Servicios y Contacto) y su hoja de estilos única con Flexbox y Grid. En cada pregunta elegís la línea de código que sigue.',
+  puntos: [
+    'Las tres páginas comparten header (site-header), nav (nav-principal) y footer (site-footer), con enlaces relativos.',
+    'Todo campo del formulario lleva su label conectado por for e id, y su name.',
+    'Un solo style.css enlazado desde las tres páginas; sin estilos inline.'
+  ],
+  ej: `#nav-principal {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}`,
+  ojo: 'Un solo h1 por página. El laboratorio 2 no permite cambiar el HTML, salvo agregar la clase campo-ancho.',
+  qs: [
+    { t: 'sigue', q: '¿Qué línea sigue en el menú?', s: 'Laboratorio 1: el menú enlaza las tres páginas, que están en la misma carpeta.', c: `<nav id="nav-principal">
+  <ul>
+    <li><a href="index.html">Inicio</a></li>
+    ___
+    <li><a href="contacto.html">Contacto</a></li>`, o: ['<li><a href="servicios.html">Servicios</a></li>', '<li><a href="/var/www/html/servicios.html">Servicios</a></li>', '<li><link href="servicios.html">Servicios</link></li>', '<li href="servicios.html">Servicios</li>'],
+      w: 'Como las páginas están en la misma carpeta, alcanza con la ruta relativa: la analogía de "la casa de al lado". Una ruta del sistema de archivos del servidor no funciona en el navegador, y link sirve para hojas de estilo, no para enlaces.',
+      h: 'Enlace relativo a un archivo de la misma carpeta.' },
+    { t: 'sigue', q: '¿Qué línea sigue?', s: 'Laboratorio 1: el campo de email tiene que llevar su label y ser obligatorio.', c: `<form id="formulario-contacto" action="#" method="post">
+  <label for="email">Email</label>
+  ___`, o: ['<input type="email" id="email" name="email" required>', '<input type="email" name="correo" required>', '<input type="text" id="mail" name="email">', '<input type="email" id="email" required>'],
+      w: 'Tienen que estar los dos hábitos "no negociables": el id coincide con el for del label (así quedan vinculados) y el name identifica el dato al enviarlo. type="email" valida el formato y required lo hace obligatorio.',
+      h: 'Revisá que coincidan for e id, y que esté el name.' },
+    { t: 'sigue', q: '¿Qué va inmediatamente después de abrir la tabla?', s: 'Laboratorio 1: la tabla de servicios separa el encabezado del cuerpo.', c: `<table id="tabla-servicios">
+  ___
+    <tr>
+      <th>Servicio</th>
+      <th>Duración</th>
+      <th>Precio</th>`, o: ['<thead>', '<tbody>', '<td>', '<caption>Servicio</caption>'],
+      w: 'La consigna pide usar thead y tbody. La fila con los th es el encabezado, así que va dentro de thead; las filas de servicios van después, dentro de tbody.',
+      h: 'Esa fila es el encabezado de la tabla.' },
+    { t: 'sigue', q: '¿Qué línea agregás en el <head> de las tres páginas?', s: 'Laboratorio 2: el sitio usa un único style.css para todas las páginas.', c: `<head>
+  <meta charset="UTF-8">
+  <title>PixelNorte · Servicios</title>
+  ___
+</head>`, o: ['<link rel="stylesheet" href="style.css">', '<style src="style.css"></style>', '<script src="style.css"></script>', '<a href="style.css">Estilos</a>'],
+      w: 'link con rel="stylesheet" enlaza una hoja de estilos externa. Hay que ponerlo en las tres páginas: si falta en una, esa página se ve sin estilos. style sirve para CSS escrito adentro del HTML y script para JavaScript.',
+      h: 'Se enlaza un archivo externo de estilos.' },
+    { t: 'sigue', q: '¿Qué dos declaraciones siguen, según la consigna?', s: 'Laboratorio 2, parte 2: el menú se arma con Flexbox, con los enlaces repartidos y centrados en vertical.', c: `#nav-principal {
+  display: flex;
+  ___
+}`, o: ['justify-content: space-between;\n  align-items: center;', 'align-items: space-between;\n  justify-content: center;', 'grid-template-columns: 1fr 1fr 1fr;', 'text-align: center;\n  float: left;'],
+      w: 'justify-content reparte los elementos sobre el eje principal (horizontal, en fila) y space-between los separa al máximo. align-items: center los centra sobre el eje cruzado. Invertidas no funcionan: align-items no acepta space-between.',
+      h: 'justify sobre el eje principal, align sobre el cruzado.' },
+    { t: 'sigue', q: '¿Qué regla hace que el mensaje y el botón ocupen todo el ancho?', s: 'Laboratorio 2, parte 5: el formulario es una grilla de dos columnas. Agregaste class="campo-ancho" al contenedor del mensaje y al del botón.', c: `#formulario-contacto {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+___`, o: ['#formulario-contacto .campo-ancho { grid-column: 1 / -1; }', '.campo-ancho { width: 200%; }', '#formulario-contacto .campo-ancho { display: flex; }', '.campo-ancho { grid-template-columns: 1fr; }'],
+      w: 'grid-column: 1 / -1 le dice al elemento que vaya desde la primera línea de la grilla hasta la última, sin importar cuántas columnas haya. grid-template-columns se aplica al contenedor, no a sus hijos.',
+      h: 'Desde la primera columna hasta la última.' },
+    { t: 'sigue', s: 'El sitio está listo en ~/sitio de tu PC. Ya lo copiaste al servidor y estás conectado por SSH. Falta publicarlo.', c: `$ scp -r sitio alumno@192.168.56.10:~/
+$ ssh alumno@192.168.56.10
+$ ___`, o: ['sudo cp -r ~/sitio/. /var/www/html/', 'cp ~/sitio /var/www/html', 'sudo mv /var/www/html ~/sitio', 'scp -r ~/sitio /var/www/html'],
+      w: 'scp dejó la carpeta en tu home del servidor; Apache sirve lo que está en /var/www/html. sudo hace falta porque esa carpeta no es tuya, -r copia la carpeta completa y ~/sitio/. copia el contenido, no la carpeta. Después se verifica con curl http://localhost.',
+      h: 'Apache sirve lo que está en el DocumentRoot.' }
+  ] } },
+{ mod: 'm5', tema: { id: 'm5p', dif: 'Práctica', n: 'Colaborar con Pull Requests',
+  idea: 'Ejercicios del Laboratorio del Módulo 5 y de la clase de despliegue: dejar el repositorio presentable, aportar al sitio de un compañero con una rama y un Pull Request, corregir lo que pide la revisión, resolver un conflicto y publicar con git pull.',
+  puntos: [
+    'Nunca se trabaja sobre main del compañero: primero git switch -c con un nombre que describa el cambio.',
+    'Un Pull Request muestra siempre el estado actual de la rama: las correcciones se suben a la misma rama.',
+    'Producción es un clon en /var/www/html y se despliega con sudo git -C /var/www/html pull.'
+  ],
+  ej: `$ git clone git@github.com:usuarioA/pixelnorte.git pixelnorte-de-A
+$ cd pixelnorte-de-A
+$ git switch -c agregar-footer-contacto
+$ git push -u origin agregar-footer-contacto`,
+  ojo: 'Si al pushear aparece Permission denied o 403, casi siempre es que la invitación de colaborador quedó sin aceptar.',
+  qs: [
+    { t: 'sigue', s: 'Parte 1.2: agregaste *.log al .gitignore y creaste prueba.log para probar la regla.', c: `$ nano .gitignore
+$ touch prueba.log
+$ ___`, o: ['git status', 'git add prueba.log', 'git log --oneline', 'git push'],
+      w: 'git status muestra lo que Git ve en la carpeta. Si la regla funciona, prueba.log no aparece como archivo sin seguir. Después se borra el archivo de prueba y se commitea el .gitignore.',
+      h: '¿Con qué comando ves qué archivos detecta Git?' },
+    { t: 'sigue', s: 'Parte 3.1: sos B y vas a aportar al repo de A. Tu propio sitio ya está en ~/sitio, así que el de A va en otra carpeta.', c: `$ cd ~
+$ ___`, o: ['git clone git@github.com:usuarioA/pixelnorte.git pixelnorte-de-A', 'git clone git@github.com:usuarioA/pixelnorte.git sitio', 'git pull git@github.com:usuarioA/pixelnorte.git', 'git remote add origin git@github.com:usuarioA/pixelnorte.git'],
+      w: 'clone descarga el repositorio completo con su historia, y el último argumento elige la carpeta. Clonarlo como sitio chocaría con tu propio proyecto. pull y remote add trabajan sobre un repositorio que ya tenés, no traen uno nuevo.',
+      h: 'Necesitás descargar un repositorio que no tenés, en una carpeta aparte.' },
+    { t: 'sigue', s: 'Parte 3.2: ya estás en pixelnorte-de-A. Antes de editar cualquier archivo…', c: `$ cd pixelnorte-de-A
+$ git status
+On branch main
+$ ___`, o: ['git switch -c agregar-footer-contacto', 'nano index.html', 'git branch -d main', 'git merge agregar-footer-contacto'],
+      w: 'git status dice On branch main: si editás ahí, trabajás directo sobre main del compañero, que es justo lo que el laboratorio prohíbe. Primero se crea la rama y te cambiás a ella; el nombre describe el cambio.',
+      h: 'Mirá en qué rama estás parado.' },
+    { t: 'sigue', s: 'Hiciste el commit del footer en tu rama. Ahora hay que subirla para abrir el Pull Request.', c: `$ git add index.html style.css
+$ git commit -m "Agregar footer con datos de contacto"
+$ ___`, o: ['git push -u origin agregar-footer-contacto', 'git push origin main', 'git pull', 'git push'],
+      w: 'Es el primer push de esa rama: -u la vincula con la remota. Después en GitHub aparece el botón Compare & pull request. Un git push solo, sin upstream configurado, falla, y pushear a main saltea la revisión.',
+      h: 'La rama todavía no existe en GitHub.' },
+    { t: 'sigue', s: 'Parte 4.2: A pidió oscurecer el color del footer. Ya corregiste y commiteaste en la misma rama.', c: `$ git status
+On branch agregar-footer-contacto
+$ nano style.css
+$ git add style.css
+$ git commit -m "Oscurecer el color del footer para mejorar el contraste"
+$ ___`, o: ['git push', 'git push -u origin main', 'git switch -c footer-corregido', 'git merge main'],
+      w: 'La rama ya tiene upstream, así que alcanza con git push. El commit nuevo aparece solo dentro del mismo Pull Request: no hace falta abrir otro. Esa es la idea central del laboratorio.',
+      h: 'El Pull Request muestra siempre el estado actual de la rama.' },
+    { t: 'sigue', s: 'Desafío del conflicto: trajiste main a tu rama con git pull origin main, editaste style.css y ya no quedan marcadores <<<<<<<, ======= ni >>>>>>>.', c: `$ git pull origin main
+CONFLICT (content): Merge conflict in style.css
+$ nano style.css
+$ ___`, o: ['git add style.css', 'git merge --abort', 'git push --force', 'git switch main'],
+      w: 'Después de resolver el archivo a mano, git add marca el conflicto como resuelto. Siguen git commit -m "Resolver conflicto con main en el color del header" y git push; el aviso desaparece del Pull Request. merge --abort descartaría todo lo que resolviste.',
+      h: 'Hay que avisarle a Git que el archivo ya está resuelto.' },
+    { t: 'sigue', s: 'Se fusionó el Pull Request en GitHub. Producción, en /var/www/html, es un clon del repositorio. Falta publicar la versión nueva.', c: `$ ssh alumno@192.168.56.10
+$ ___`, o: ['sudo git -C /var/www/html pull', 'sudo cp -r ~/sitio/. /var/www/html/', 'git push /var/www/html', 'sudo git clone URL-HTTPS /var/www/html'],
+      w: 'Con producción convertida en clon, desplegar es un solo comando: -C ejecuta git sobre esa carpeta sin hacer cd. El cp -r manual quedó para atrás, y el clone se hace una sola vez, al preparar el servidor.',
+      h: 'Es el comando que reemplazó al scp y al cp -r.' }
+  ] } },
+{ mod: 'm6', tema: { id: 'm6p', dif: 'Práctica', n: 'Instalar Docker y levantar proyectos',
+  idea: 'Ejercicios de los laboratorios del Módulo 6: instalar Docker Engine desde el repositorio oficial, usarlo sin sudo y levantar con Compose el sitio de PixelNorte, el stack LAMP y WordPress. Es lo que se evalúa del módulo: levantar, ver el estado, leer logs y bajar.',
+  puntos: [
+    'Después de agregar una fuente de paquetes, apt update para que apt la lea.',
+    'El grupo docker se aplica al iniciar sesión: hay que salir y volver a conectarse.',
+    'docker compose down conserva los volúmenes; down -v los borra.'
+  ],
+  ej: `$ docker compose up -d
+$ docker compose ps
+$ docker compose logs -f db
+$ docker compose down`,
+  ojo: 'Los comandos de Compose se ejecutan desde la carpeta donde está el compose.yaml.',
+  qs: [
+    { t: 'sigue', s: 'Parte 2: descargaste la clave GPG y registraste el repositorio oficial de Docker en /etc/apt/sources.list.d/docker.sources.', c: `$ sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+...
+EOF
+$ ___`, o: ['sudo apt update', 'sudo apt install docker.io', 'docker run hello-world', 'sudo systemctl start docker'],
+      w: 'apt no lee una fuente nueva hasta actualizar la lista de paquetes. En la salida tiene que aparecer download.docker.com. Recién después se instala docker-ce. docker.io es justamente el paquete no oficial que se quitó en la parte 1.',
+      h: 'apt todavía no sabe que existe ese repositorio.' },
+    { t: 'sigue', s: 'Parte 6: querés usar Docker sin sudo. Ya te agregaste al grupo docker.', c: `$ sudo usermod -aG docker $USER
+$ ___`, o: ['exit, y volver a conectarte por SSH', 'docker run hello-world', 'sudo chmod 777 /var/run/docker.sock', 'sudo apt install docker-group'],
+      w: 'Los grupos de un usuario se cargan al iniciar sesión. Hasta que no salgas y vuelvas a entrar, la sesión actual no sabe que ahora estás en docker. Al reconectarte, groups lo confirma y docker run hello-world anda sin sudo.',
+      h: '¿Cuándo se cargan los grupos de un usuario?' },
+    { t: 'sigue', s: 'Antes de arrancar el laboratorio de Compose, docker ps -a muestra el contenedor pixelnorte de la clase 2, que tiene tomado el puerto 8080.', c: `$ docker ps -a
+NAMES        STATUS          PORTS
+pixelnorte   Up 2 hours      0.0.0.0:8080->80/tcp
+$ ___`, o: ['docker rm -f pixelnorte', 'docker stop 8080', 'docker compose down', 'docker rmi nginx'],
+      w: 'rm -f detiene y borra el contenedor en un paso, y libera el 8080. docker compose down no lo toca porque ese contenedor no lo creó Compose. docker rmi borra imágenes, no contenedores.',
+      h: 'Ese contenedor se creó con docker run, no con Compose.' },
+    { t: 'sigue', s: 'Parte 1: escribiste el compose.yaml de PixelNorte en ~/pixelnorte.', c: `$ mkdir ~/pixelnorte
+$ cd ~/pixelnorte
+$ nano compose.yaml
+$ ___`, o: ['docker compose up -d', 'docker run compose.yaml', 'docker compose ps', 'docker compose logs -f'],
+      w: 'up -d crea y arranca los servicios en segundo plano. Recién después tiene sentido docker compose ps para ver el estado y logs -f para seguir las peticiones al recargar la página.',
+      h: 'Primero hay que levantar el proyecto.' },
+    { t: 'sigue', s: 'Parte 2: levantaste el stack LAMP pero la página muestra "Sin conexión todavía".', c: `$ cd ~/lamp
+$ docker compose up -d
+$ docker compose ps
+$ ___`, o: ['docker compose logs -f db', 'docker compose down -v', 'docker compose restart web', 'docker rm -f lamp-web-1'],
+      w: 'MySQL tarda en inicializarse la primera vez, y depends_on no espera a que esté listo. En los logs de db se espera el ready for connections que dice port: 3306; recién entonces la página conecta. No hay nada roto que reiniciar.',
+      h: 'La base puede estar todavía arrancando.' },
+    { t: 'sigue', s: 'Parte 2, paso 8: querés entrar a MySQL dentro del contenedor para ver la tabla visitas.', c: `$ cd ~/lamp
+$ ___`, o: ['docker compose exec db mysql -u pixel -p pixelnorte', 'sudo mysql -u pixel -p', 'ssh db', 'docker compose logs db mysql'],
+      w: 'exec ejecuta un comando dentro de un servicio que está corriendo, en este caso el cliente de MySQL del contenedor db. sudo mysql intentaría usar un MySQL instalado en la VM, que no es el del proyecto.',
+      h: 'Hay que ejecutar un comando adentro del contenedor.' },
+    { t: 'sigue', s: 'Parte 2, paso 9: querés que el contador de visitas vuelva a empezar de cero, borrando los datos de la base.', c: `$ cd ~/lamp
+$ ___`, o: ['docker compose down -v', 'docker compose down', 'docker compose stop', 'docker compose restart'],
+      w: 'Los datos viven en el volumen con nombre datos. down borra los contenedores pero deja el volumen, y el contador sigue donde estaba. Con -v también se borra el volumen, y al volver a levantar la base empieza vacía.',
+      h: '¿Dónde quedan guardados los datos de MySQL?' }
+  ] } }
+];
+PRACTICA.forEach(p => LAB.find(m => m.id === p.mod).temas.push(p.tema));
+
+const NIVELES = LAB;
+const TEMAS = NIVELES.flatMap(n => n.temas.map(t => ({...t, final: !!n.final, nivel: n.final ? n.nombre : 'Nivel ' + n.nombre.toLowerCase()})));
+const tema = id => TEMAS.find(t => t.id === id);
+const pregunta = qid => { const [tid, i] = qid.split('-'); const t = tema(tid); return t && t.qs[+i] ? {...t.qs[+i], qid, tema: t.n} : null; };
+const mezclar = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const dia = (d = new Date()) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+
+/* ---------- resaltado de código ---------- */
+const pintar = linea => {
+  let pre = '', resto = linea;
+  const m = /^(\$ )(.*)$/.exec(linea);
+  if (m) { pre = '<span class="p">$</span> '; resto = m[2]; }
+  let com = '';
+  const c = /(^|\s)(#(?:\s|!|$).*)$/.exec(resto);
+  if (c) { com = `<span class="c">${esc(c[2])}</span>`; resto = resto.slice(0, c.index + c[1].length); }
+  const cuerpo = esc(resto).replace(/(&quot;.*?&quot;|&#39;.*?&#39;)|(&lt;\/?[a-z0-9]+|&gt;)|\b(sudo|if|then|else|elif|fi|for|in|do|done|while|until|echo|git|docker|ssh|chmod|chown|apt|curl|ping|services|image|ports|volumes|restart|display|grid-template-columns|@media)\b/g,
+    (x, str, tag, kw) => `<span class="${str ? 's' : tag ? 'k' : 'n'}">${x}</span>`);
+  return pre + cuerpo + com;
+};
+const codigo = src => `<pre class="code" tabindex="0" aria-label="Código">${src.split('\n').map(l => `<span class="l">${pintar(l) || ' '}</span>`).join('')}</pre>`;
+
+/* ---------- progreso ---------- */
+const CLAVE = 'terminal-lab-v1';
+let P = {xp: 0, temas: {}, fallos: [], dia: '', racha: 0};
+let ref = null, guardando = Promise.resolve(), nube = false;
+const limpio = d => ({xp: Number(d.xp) || 0, temas: d.temas && typeof d.temas === 'object' ? JSON.parse(JSON.stringify(d.temas)) : {}, fallos: Array.isArray(d.fallos) ? d.fallos.filter(pregunta) : [], dia: d.dia || '', racha: Number(d.racha) || 0});
+function guardar() {
+  try { localStorage.setItem(CLAVE, JSON.stringify(P)); } catch {}
+  if (ref) { const copia = JSON.parse(JSON.stringify(P)); guardando = guardando.then(() => ref.set(copia)).catch(() => {}); }
+}
+async function iniciarGuardado() {
+  try { const raw = localStorage.getItem(CLAVE); if (raw) P = limpio(JSON.parse(raw)); } catch {}
+  render();
+  let db = null;
+  try { db = await window.claude?.use?.('db'); } catch {}
+  if (!db) return;
+  try {
+    ref = db.doc('progreso/jugador');
+    const s = await ref.get();
+    nube = true;
+    if (s.exists) { const d = limpio(s.data()); if (d.xp >= P.xp) P = d; else guardar(); }
+    else if (P.xp) guardar();
+    if (V.pantalla === 'mapa') render();
+  } catch { ref = null; }
+}
+
+/* ---------- estado de la partida ---------- */
+const V = {pantalla: 'mapa', ses: null};
+const estrellas = (n, total = 5) => { const r = n / total; return r >= 1 ? 3 : r >= 0.8 ? 2 : r >= 0.6 ? 1 : 0; };
+const rango = xp => xp >= 600 ? 'root' : xp >= 300 ? 'Sysadmin' : xp >= 100 ? 'Sudoer' : 'Usuario nuevo';
+const siguiente = () => TEMAS.find(t => !P.temas[t.id]) || TEMAS.find(t => estrellas(P.temas[t.id].mejor, t.qs.length) < 3) || null;
+
+function empezar(qids, t, titulo) {
+  V.ses = {tema: t || null, titulo: titulo || '', cola: [...qids], total: qids.length, hechas: 0, primer: 0, xp: 0, fallados: [], vistos: {}, actual: null};
+  V.pantalla = t ? 'leccion' : 'pregunta';
+  if (!t) cargarPregunta();
+  render();
+}
+function cargarPregunta() {
+  const s = V.ses, q = pregunta(s.cola[0]);
+  s.actual = {q, ops: mezclar(q.o.map((txt, i) => ({txt, ok: i === 0}))), elegida: null, pista: false, reintento: !!s.vistos[q.qid]};
+}
+function responder(i) {
+  const s = V.ses, a = s.actual;
+  if (!a || a.elegida !== null) return;
+  a.elegida = i;
+  const ok = a.ops[i].ok, qid = a.q.qid;
+  if (ok) {
+    const g = a.reintento ? 4 : a.pista ? 6 : 10;
+    s.xp += g; P.xp += g; s.hechas++;
+    if (!a.reintento) s.primer++;
+    if (!a.reintento) P.fallos = P.fallos.filter(x => x !== qid);
+    s.cola.shift();
+  } else {
+    if (!s.fallados.includes(qid)) s.fallados.push(qid);
+    if (!P.fallos.includes(qid)) P.fallos.push(qid);
+    s.cola.push(s.cola.shift());
+  }
+  s.vistos[qid] = true;
+  guardar(); render();
+  const b = $('#seguir'); if (b) b.focus();
+}
+function avanzar() {
+  const s = V.ses;
+  if (!s.cola.length) return terminar();
+  cargarPregunta(); render();
+}
+function terminar() {
+  const s = V.ses, hoy = dia();
+  if (s.tema) {
+    const prev = P.temas[s.tema.id] || {mejor: 0, veces: 0};
+    P.temas[s.tema.id] = {mejor: Math.max(prev.mejor, s.primer), veces: prev.veces + 1};
+  }
+  if (P.dia !== hoy) {
+    const ayer = new Date(); ayer.setDate(ayer.getDate() - 1);
+    P.racha = P.dia === dia(ayer) ? P.racha + 1 : 1; P.dia = hoy;
+  }
+  guardar(); V.pantalla = 'fin'; render();
+}
+
+/* ---------- pantallas ---------- */
+function cabecera() {
+  const hechos = TEMAS.filter(t => P.temas[t.id]).length;
+  return `<header class="bar-top"><a class="volver" href="../">← Todos los juegos</a><h1 class="logo">alumno@lab<i>:~$</i></h1>
+    <div class="kpis"><span class="kpi"><b>${P.xp}</b> XP · ${rango(P.xp)}</span><span class="kpi"><b>${P.racha}</b> ${P.racha === 1 ? 'día seguido' : 'días seguidos'}</span><span class="kpi"><b>${hechos}</b> de ${TEMAS.length} temas</span></div></header>`;
+}
+function tarjeta(t, sig, num) {
+  const p = P.temas[t.id], tot = t.qs.length, e = p ? estrellas(p.mejor, tot) : 0;
+  return `<button class="tema${sig && sig.id === t.id ? ' sig' : ''}" type="button" data-tema="${t.id}">
+    <span class="num">${esc(t.dif || num)}</span><span class="nom">${esc(t.n)}</span>
+    <span class="est">${p ? `<b aria-hidden="true">${'★'.repeat(e)}${'☆'.repeat(3 - e)}</b><br>Mejor: ${p.mejor} de ${tot} a la primera` : `${tot} desafíos · sin jugar`}</span></button>`;
+}
+function mapa() {
+  const sig = siguiente(), nf = P.fallos.length;
+  let n = 0;
+  const bloque = N => `<section class="nivel">
+    <div class="nivel-head"><h3>${esc(N.final ? N.nombre : 'Nivel ' + N.nombre.toLowerCase())}</h3><span>${esc(N.desc)}</span></div>
+    <div class="temas">${N.temas.map(t => tarjeta(t, sig, String(++n).padStart(2, '0'))).join('')}</div></section>`;
+  return `${cabecera()}
+  <section class="hero">
+    <div>
+      <h2>Leé la terminal, predecí qué pasa y entendé por qué.</h2>
+      <p>${sig ? `${P.temas[sig.id] ? 'Te conviene repetir' : 'Seguís con'}: <b>${esc(sig.n)}</b>${sig.dif ? ', bloque ' + sig.dif.toLowerCase() : ''} (${esc(sig.nivel)}).` : 'Completaste los 18 bloques con tres estrellas. Podés repetir cualquiera para mantenerlos frescos.'}</p>
+      <div class="cta">
+        ${sig ? `<button class="btn" type="button" data-tema="${sig.id}">${P.xp ? 'Seguir jugando' : 'Empezar'}</button>` : ''}
+        <button class="btn ghost" type="button" data-act="simulacro">Simulacro de final</button>
+        <button class="btn ghost" type="button" data-act="repaso" ${nf ? '' : 'disabled'}>${nf ? `Repasar mis errores (${nf})` : 'Sin errores para repasar'}</button>
+      </div>
+    </div>
+    ${codigo('$ ssh alumno@192.168.56.10\n$ sudo systemctl status apache2\n$ sudo git -C /var/www/html pull\n$ docker compose up -d')}
+  </section>
+  <div class="seccion"><h2>Laboratorio Full Stack I</h2><p>Tres bloques por módulo: medio y difícil con el material de lectura, y uno de práctica con los ejercicios de los laboratorios, al estilo \u201c¿qué comando sigue?\u201d. El simulacro mezcla 10 preguntas de todos los módulos.</p></div>
+  ${NIVELES.filter(N => N.final).map(bloque).join('')}
+  <p class="nota">Tres estrellas = todos los desafíos del bloque resueltos al primer intento. Cuando fallás una pregunta, vuelve a aparecer hasta que la resolvés. ${nube ? 'Tu progreso se guarda en tu cuenta.' : 'Tu progreso se guarda en este navegador.'}</p>`;
+}
+function leccion() {
+  const t = V.ses.tema;
+  return `<div class="fila"><button class="btn link" type="button" data-act="salir">← Volver al mapa</button><span class="eyebrow">${esc(t.nivel)}${t.dif ? ' · ' + t.dif : ''}</span></div>
+  <article class="card">
+    <p class="eyebrow">Antes de jugar</p>
+    <h2>${esc(t.n)}</h2>
+    <p>${esc(t.idea)}</p>
+    ${t.puntos ? `<ul class="puntos">${t.puntos.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+    ${t.ej ? codigo(t.ej) : ''}
+    <div class="ojo"><b>Error frecuente.</b> ${esc(t.ojo)}</div>
+    <div class="fila"><span class="nota">Vienen ${t.qs.length} desafíos sobre este tema.</span><button class="btn" type="button" data-act="jugar" id="seguir">Empezar los desafíos</button></div>
+  </article>`;
+}
+function pantallaPregunta() {
+  const s = V.ses, a = s.actual, q = a.q, resp = a.elegida !== null, ok = resp && a.ops[a.elegida].ok;
+  const titulo = q.q || (q.t === 'sigue' ? '¿Qué comando sigue?' : '¿Qué muestra la terminal?');
+  return `<div class="fila"><button class="btn link" type="button" data-act="salir">← Salir</button>
+    <div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="${s.total}" aria-valuenow="${s.hechas}" aria-label="Desafíos resueltos"><i style="width:${Math.round(s.hechas / s.total * 100)}%"></i></div>
+    <span class="kpi">${s.hechas} de ${s.total}</span></div>
+  <article class="card">
+    <p class="eyebrow">${esc(s.tema ? s.tema.n : s.titulo + ' · ' + q.tema)}${a.reintento ? ' · segundo intento' : ''}</p>
+    <h2 class="q">${esc(titulo)}</h2>
+    ${q.s ? `<p class="sit">${esc(q.s)}</p>` : ''}
+    ${q.c ? codigo(q.c) : ''}
+    ${q.tabla ? `<div class="traza"><table><caption>Prueba de escritorio</caption><thead><tr>${q.tabla.cols.map(c => `<th scope="col">${esc(c)}</th>`).join('')}</tr></thead><tbody>${q.tabla.filas.map(f => `<tr>${f.map(c => `<td${c === '?' ? ' class="hueco"' : ''}>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : ''}
+    <div class="ops" role="group" aria-label="Opciones">${a.ops.map((o, i) => {
+      const cls = resp ? (o.ok ? ' ok' : i === a.elegida ? ' mal' : '') : '';
+      const marca = resp ? (o.ok ? '<span class="marca">✓ Correcta</span>' : i === a.elegida ? '<span class="marca">✕ Tu respuesta</span>' : '') : '';
+      return `<button class="op${q.t === 'salida' || q.t === 'sigue' ? ' mono' : ''}${cls}" type="button" data-op="${i}" ${resp ? 'disabled' : ''}><kbd>${i + 1}</kbd><span>${esc(o.txt)}</span>${marca}</button>`; }).join('')}</div>
+    ${!resp ? (a.pista ? `<div class="pista"><b>Pista.</b> ${esc(q.h)}</div>` : `<div class="fila"><button class="btn link" type="button" data-act="pista">Pedir una pista</button><span class="nota">Con pista sumás 6 XP en vez de 10.</span></div>`) : ''}
+    ${resp ? `<div class="fb${ok ? '' : ' mal'}" role="status"><strong>${ok ? (a.reintento ? 'Ahora sí.' : 'Correcto.') : 'No era esa.'}</strong><p>${esc(q.w)}</p>${ok ? '' : '<p style="margin-top:8px">Esta pregunta vuelve al final para que la intentes de nuevo.</p>'}</div>
+      <div class="fila"><span class="nota">${ok ? `+${a.reintento ? 4 : a.pista ? 6 : 10} XP` : ''}</span><button class="btn" type="button" data-act="seguir" id="seguir">${s.cola.length ? 'Siguiente' : 'Ver resultado'}</button></div>` : ''}
+  </article>`;
+}
+function fin() {
+  const s = V.ses, t = s.tema, e = estrellas(s.primer, s.total);
+  const prox = t ? (TEMAS[TEMAS.findIndex(x => x.id === t.id) + 1] || null) : null;
+  return `${cabecera()}
+  <article class="card">
+    <p class="eyebrow">${esc(t ? t.n : s.titulo)}</p>
+    <h2>${s.primer === s.total ? 'Todo bien al primer intento.' : s.primer >= s.total / 2 ? 'Terminado.' : 'Terminado. Este conviene repetirlo.'}</h2>
+    <div class="fila" style="justify-content:flex-start;gap:24px">
+      <div><div class="resumen-n">${s.primer}/${s.total}</div><span class="nota">a la primera</span></div>
+      <div><div class="resumen-n">+${s.xp}</div><span class="nota">XP ganados</span></div>
+      ${t ? `<div><div class="estrellas" aria-label="${e} de 3 estrellas">${'★'.repeat(e)}${'☆'.repeat(3 - e)}</div><span class="nota">en esta partida</span></div>` : ''}
+    </div>
+    ${s.fallados.length ? `<div><p style="font-weight:700;margin-bottom:8px">Lo que te costó en esta partida</p><ul class="rep">${s.fallados.map(id => { const q = pregunta(id); return `<li>${esc(q.w)}</li>`; }).join('')}</ul></div>` : ''}
+    <div class="cta">
+      ${prox ? `<button class="btn" type="button" data-tema="${prox.id}" id="seguir">Siguiente tema: ${esc(prox.n)}</button>` : ''}
+      ${t && e < 3 ? `<button class="btn sec" type="button" data-tema="${t.id}">Repetir este tema</button>` : ''}
+      <button class="btn sec" type="button" data-act="salir" ${prox ? '' : 'id="seguir"'}>Volver al mapa</button>
+    </div>
+  </article>`;
+}
+function render() {
+  $('#app').innerHTML = V.pantalla === 'leccion' ? leccion() : V.pantalla === 'pregunta' ? pantallaPregunta() : V.pantalla === 'fin' ? fin() : mapa();
+}
+function ir(p) { V.pantalla = p; render(); window.scrollTo(0, 0); }
+
+/* ---------- eventos ---------- */
+document.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || b.disabled) return;
+  if (b.dataset.tema) { const t = tema(b.dataset.tema); empezar(t.qs.map((_, i) => t.id + '-' + i), t); window.scrollTo(0, 0); return; }
+  if (b.dataset.op) return responder(+b.dataset.op);
+  const a = b.dataset.act;
+  if (a === 'salir') { V.ses = null; ir('mapa'); }
+  if (a === 'jugar') { cargarPregunta(); ir('pregunta'); }
+  if (a === 'pista') { V.ses.actual.pista = true; render(); }
+  if (a === 'seguir') { avanzar(); window.scrollTo(0, 0); }
+  if (a === 'repaso') { empezar(mezclar(P.fallos).slice(0, 8), null, 'Repaso de errores'); window.scrollTo(0, 0); }
+  if (a === 'simulacro') {
+    const CLAVE_FINAL = [];
+    const bolsa = TEMAS.filter(t => t.final).flatMap(t => t.qs.flatMap((_, i) => Array(CLAVE_FINAL.includes(t.id) ? 2 : 1).fill(t.id + '-' + i)));
+    empezar([...new Set(mezclar(bolsa))].slice(0, 10), null, 'Simulacro de final'); window.scrollTo(0, 0);
+  }
+});
+document.addEventListener('keydown', e => {
+  if (V.pantalla !== 'pregunta' || e.ctrlKey || e.metaKey || e.altKey) return;
+  const a = V.ses.actual, n = parseInt(e.key, 10);
+  if (a.elegida === null && n >= 1 && n <= a.ops.length) { e.preventDefault(); responder(n - 1); }
+});
+iniciarGuardado();
+</script>
+</body>
+</html>

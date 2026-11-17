@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Del problema al prototipo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* Plan: una sola columna angosta, como una partida. Mapa de 3 niveles x 4 temas; cada tema = mini lección + 5 desafíos.
+   El código siempre va en un bloque oscuro tipo editor; el coral se reserva para la acción principal. */
+:root{
+  /* Plan: tokens tonales de Material 3 (la materia los usa como referencia) y Atkinson Hyperlegible, una tipografía pensada para baja visión. Dos materias, una sola ruta: del problema al prototipo. */
+  --bg:#FEF7FF; --surface:#FFFFFF; --surface-2:#F0E8F5; --ink:#1D1B20; --muted:#55505C; --line:#D9D1DE;
+  --primary:#4F378B; --on-primary:#FFFFFF; --accent:#8A3B5C; --on-accent:#FFFFFF;
+  --ok:#1E6B45; --ok-bg:#DCF1E4; --bad:#B3261E; --bad-bg:#F9DEDC;
+  --code-bg:#2B2536; --code-ink:#F3EDF7; --code-k:#FFB0C8; --code-s:#B7E4C7; --code-n:#FFD8A8; --code-c:#B3A8C2; --code-p:#FFB0C8;
+  --pp:#00696B; --ux:#8A3B5C;
+  --f-display:"Bricolage Grotesque","Atkinson Hyperlegible",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-code:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  --r:16px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141218; --surface:#1D1B20; --surface-2:#2B2930; --ink:#E6E0E9; --muted:#CAC4D0; --line:#3E3946;
+    --primary:#D0BCFF; --on-primary:#381E72; --accent:#FFB0C8; --on-accent:#5E1133;
+    --ok:#7FD8A4; --ok-bg:#123726; --bad:#F2B8B5; --bad-bg:#4A1714;
+    --code-bg:#0F0D13; --pp:#4CDADA; --ux:#FFB0C8; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141218; --surface:#1D1B20; --surface-2:#2B2930; --ink:#E6E0E9; --muted:#CAC4D0; --line:#3E3946;
+  --primary:#D0BCFF; --on-primary:#381E72; --accent:#FFB0C8; --on-accent:#5E1133;
+  --ok:#7FD8A4; --ok-bg:#123726; --bad:#F2B8B5; --bad-bg:#4A1714;
+  --code-bg:#0F0D13; --pp:#4CDADA; --ux:#FFB0C8; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.5}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.wrap{max-width:760px;margin:0 auto;padding:16px 16px 56px;display:flex;flex-direction:column;gap:20px}
+
+.bar-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.logo{font-family:var(--f-display);font-weight:800;font-size:1.3rem;letter-spacing:-.02em;margin:0;color:var(--ink)}
+.logo i{font-style:normal;color:var(--accent)}
+.kpis{display:flex;gap:8px;flex-wrap:wrap}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:.88rem;font-weight:600;font-variant-numeric:tabular-nums}
+.kpi b{color:var(--primary)}
+
+.hero{background:var(--primary);color:var(--on-primary);border-radius:26px;padding:24px;display:grid;gap:20px;grid-template-columns:1fr}
+.hero h2{font-family:var(--f-display);font-weight:800;font-size:clamp(1.45rem,5.2vw,2.1rem);line-height:1.12;letter-spacing:-.03em;margin:0 0 10px;text-wrap:balance}
+.hero p{margin:0 0 16px;opacity:.92;max-width:44ch}
+.hero .code{margin:0;font-size:.82rem}
+.cta{display:flex;gap:10px;flex-wrap:wrap}
+@media (min-width:680px){.hero{grid-template-columns:1.25fr 1fr;align-items:center;padding:32px}}
+
+.btn{border:0;border-radius:14px;padding:13px 22px;min-height:48px;font-weight:700;background:var(--accent);color:var(--on-accent)}
+.btn.sec{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.btn.ghost{background:transparent;color:inherit;border:1.5px solid currentColor}
+.btn.link{background:none;color:var(--primary);padding:8px 4px;min-height:44px;text-decoration:underline;text-underline-offset:3px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+
+.nivel h3{font-family:var(--f-display);font-size:1.02rem;margin:0;letter-spacing:-.01em}
+.nivel-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.nivel-head span{color:var(--muted);font-size:.9rem}
+.temas{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(165px,1fr))}
+.tema{text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:6px;min-height:118px}
+.tema:hover{border-color:var(--primary)}
+.tema .num{font-family:var(--f-code);font-size:.78rem;color:var(--muted)}
+.tema .nom{font-weight:700;line-height:1.25}
+.tema .est{margin-top:auto;font-size:.85rem;color:var(--muted)}
+.tema .est b{color:var(--accent);letter-spacing:2px;font-size:1rem}
+.tema.sig{border:2px solid var(--accent)}
+.nota{color:var(--muted);font-size:.88rem;margin:0}
+.ruta{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px;align-content:center}
+.ruta li{font-weight:700;font-size:.9rem;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.5);display:flex;align-items:center;gap:6px}
+.ruta li::before{content:"";width:9px;height:9px;border-radius:50%}
+.ruta li.pp::before{background:#7FF2F2} .ruta li.ux::before{background:#FFC2D6}
+.ruta li:not(:last-child)::after{content:"→";margin-left:4px;opacity:.7}
+.seccion{border-top:4px solid var(--ink);padding-top:14px;margin-top:8px;display:grid;gap:10px;justify-items:start}
+.seccion.pp{border-color:var(--pp)} .seccion.ux{border-color:var(--ux)}
+.seccion h2{font-family:var(--f-display);font-size:1.25rem;letter-spacing:-.02em;margin:0 0 4px}
+.seccion p{margin:0;color:var(--muted);font-size:.95rem;max-width:62ch}
+.puntos{margin:0;padding-left:20px;display:grid;gap:6px;font-size:.97rem;max-width:62ch}
+.traza{overflow-x:auto}
+.traza table{border-collapse:collapse;font-family:var(--f-code);font-size:.88rem;min-width:60%}
+.traza caption{caption-side:top;text-align:left;font-family:var(--f-body);font-size:.78rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);padding-bottom:6px}
+.traza th,.traza td{border:1px solid var(--line);padding:6px 12px;text-align:center;white-space:nowrap}
+.traza th{background:var(--surface-2);font-weight:600}
+.traza td.hueco{background:var(--accent);color:var(--on-accent);font-weight:700}
+
+.code{background:var(--code-bg);color:var(--code-ink);border-radius:12px;font-size:.95rem;padding:14px 14px 14px 0;font-family:var(--f-code);font-size:.88rem;line-height:1.65;overflow-x:auto;margin:0;counter-reset:ln}
+.code span.l{display:block;white-space:pre;padding-right:14px}
+.code span.l::before{counter-increment:ln;content:counter(ln);display:inline-block;width:2.4em;margin-right:.9em;text-align:right;color:var(--code-c);user-select:none}
+.code .p{color:var(--code-p);font-weight:700} .code .k{color:var(--code-k)} .code .s{color:var(--code-s)} .code .n{color:var(--code-n)} .code .c{color:var(--code-c);font-style:italic}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:20px;display:flex;flex-direction:column;gap:16px}
+.eyebrow{font-size:.78rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0}
+.card h2{font-family:var(--f-display);font-size:1.3rem;line-height:1.2;margin:0;letter-spacing:-.02em;text-wrap:balance}
+.card p{margin:0;max-width:62ch}
+.ojo{background:var(--surface-2);border-radius:12px;padding:12px 14px;font-size:.95rem}
+.ojo b{color:var(--accent)}
+.fila{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+
+.prog{height:8px;background:var(--surface-2);border-radius:99px;overflow:hidden;flex:1;min-width:120px}
+.prog i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.q{font-size:1.15rem;font-weight:700;line-height:1.3;margin:0}
+.ops{display:grid;gap:10px}
+.op{display:flex;gap:12px;align-items:flex-start;text-align:left;background:var(--bg);border:2px solid var(--line);border-radius:14px;padding:12px 14px;min-height:52px;width:100%}
+.op:hover:not([disabled]){border-color:var(--primary)}
+.op kbd{flex:none;font-family:var(--f-code);font-size:.78rem;border:1px solid var(--line);border-radius:6px;padding:1px 7px;color:var(--muted);margin-top:2px}
+.op span{white-space:pre-wrap;overflow-wrap:anywhere}
+.op.mono span{font-family:var(--f-code);font-size:.92rem}
+.op[disabled]{cursor:default;opacity:.65}
+.op.ok{border-color:var(--ok);background:var(--ok-bg);opacity:1}
+.op.mal{border-color:var(--bad);background:var(--bad-bg);opacity:1}
+.op .marca{margin-left:auto;font-weight:700;font-size:.85rem;white-space:nowrap}
+.op.ok .marca{color:var(--ok)} .op.mal .marca{color:var(--bad)}
+.sit{margin:-6px 0 0;color:var(--muted);max-width:62ch}
+.pista{background:var(--surface-2);border-radius:12px;padding:10px 14px;font-size:.95rem}
+.fb{border-radius:14px;padding:14px 16px;border-left:5px solid var(--ok);background:var(--ok-bg)}
+.fb.mal{border-color:var(--bad);background:var(--bad-bg)}
+.fb strong{display:block;margin-bottom:4px}
+.fb p{font-size:.98rem}
+
+.resumen-n{font-family:var(--f-display);font-weight:800;font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums}
+.estrellas{color:var(--accent);font-size:1.8rem;letter-spacing:6px}
+.rep{margin:0;padding-left:20px;display:grid;gap:6px;font-size:.95rem}
+@media (prefers-reduced-motion:no-preference){
+  .prog i{transition:width .35s ease}
+  .fb{animation:sube .22s ease-out}
+  @keyframes sube{from{transform:translateY(6px);opacity:.4}to{transform:none;opacity:1}}
+}
+.volver{flex-basis:100%;font-weight:700;font-size:.9rem;color:var(--muted);text-decoration:none;padding:6px 0;min-height:32px}
+.volver:hover{color:var(--ink);text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+const PP = [
+{ id: 'pp1', mat: 'pp', final: true, nombre: 'Unidad 1 · Resolución de problemas y casos de uso', desc: 'Datos, incógnita, estrategias, principios del desarrollo, actores y casos de uso.', temas: [
+  { id: 'pp1m', dif: 'Medio', n: 'Resolver problemas antes de programar',
+    idea: 'Un problema es una situación con un objetivo que queremos alcanzar sin tener claro cómo. Se descompone en datos (qué información tengo), incógnita (qué necesito averiguar) y condiciones (qué tiene que cumplirse). El proceso tiene cuatro pasos: entender, planificar, ejecutar y verificar.',
+    puntos: [
+      'No todo dato que aparece es necesario: la relevancia depende de la pregunta.',
+      'La incógnita puede ser una decisión, no necesariamente un número.',
+      'Estrategias: representar, dividir en partes, razonar hacia atrás, partir de un supuesto, buscar similitudes y reformular.',
+      'Problema, necesidad y solución son tres cosas distintas. Principio 1: comprender antes de construir.'
+    ],
+    ojo: 'Verificar no es volver a mirar la respuesta: es comprobar que usaste bien los datos, respondiste la pregunta y cumpliste todas las condiciones.',
+    qs: [
+      { t: 'concepto', q: '¿Qué dato es irrelevante?', s: 'Juan tiene 10 caramelos y lleva puesta una remera roja. Le da 4 caramelos a su amiga. ¿Cuántos caramelos le quedan?', o: ['La remera roja', 'Los 10 caramelos', 'Los 4 caramelos que entrega', 'Ninguno: todos los datos sirven'],
+        w: 'Que una información aparezca en el problema no significa que haga falta para resolverlo. La relevancia de un dato depende de la pregunta: para saber cuántos caramelos quedan, el color de la remera no aporta nada.',
+        h: '¿Qué datos usarías en la cuenta?' },
+      { t: 'concepto', q: 'Cuatro estudiantes eligen entre viajar en colectivo o en auto para llegar a un evento a tiempo. ¿Cuál es la incógnita?', o: ['Qué alternativa cumple la condición de horario y resulta más conveniente', 'Cuánto cuesta el pasaje de colectivo', 'A qué hora empieza el evento', 'Cuántos estudiantes viajan'],
+        w: 'La incógnita es lo que queremos determinar, y en este caso es una decisión, no un número. El horario del evento, el costo del pasaje y la cantidad de estudiantes son datos que se usan para llegar a esa decisión.',
+        h: 'Una incógnita no siempre es un número.' },
+      { t: 'concepto', q: 'Hay que llegar a las 19:00 y el colectivo tarda 6 horas, así que calculás que hay que salir a las 13:00. ¿Qué estrategia usaste?', o: ['Razonar hacia atrás', 'Dividir en partes', 'Partir de un supuesto', 'Representar gráficamente'],
+        w: 'Razonar hacia atrás sirve cuando conocés el resultado deseado o el estado final y podés invertir los pasos: del horario de llegada se va al horario de salida. Partir de un supuesto sería proponer una opción, por ejemplo "vamos en colectivo", y verificar si cumple.',
+        h: 'Arrancaste desde el final.' },
+      { t: 'concepto', q: '"Un sistema web de turnos médicos online, disponible las 24 horas". ¿Qué es eso?', o: ['La solución', 'El problema', 'La necesidad', 'Un requerimiento no funcional'],
+        w: 'El problema es la situación real (las líneas telefónicas colapsan y hay registros duplicados). La necesidad es lo que requieren las personas (consultar especialidades y pedir un turno fácilmente). La solución es lo que podemos construir para responder a esa necesidad.',
+        h: '¿Es lo que pasa, lo que se necesita o lo que se construye?' },
+      { t: 'concepto', q: 'Según el material, ¿cuál es una de las mayores trampas del desarrollo profesional?', o: ['Escribir código impecable para resolver un problema que se malentendió desde el inicio', 'Usar demasiados lenguajes de programación', 'Testear antes de terminar de programar', 'Trabajar en equipo con otros roles'],
+        w: 'Es la razón del principio "comprender antes de construir": el resultado es algo bien hecho que no sirve para nada. Por eso la programación es una parte del proceso, que empieza por comprender y analizar.',
+        h: 'Tiene que ver con el principio número 1.' },
+      { t: 'concepto', q: '¿Qué rol actúa como nexo entre las áreas de negocio y el equipo técnico?', o: ['Analista funcional', 'Product Owner', 'UX/UI Designer', 'Tester'],
+        w: 'El analista funcional entrevista usuarios, releva procesos, modela requerimientos y aclara ambigüedades. El Product Owner maximiza el valor del producto y prioriza el Product Backlog.',
+        h: 'Es quien traduce el lenguaje del negocio al del equipo.' }
+    ] },
+  { id: 'pp1d', dif: 'Difícil', n: 'Actores y casos de uso',
+    idea: 'Un actor es una persona, organización o sistema externo que interactúa con el sistema para alcanzar un objetivo. Un caso de uso es una acción que el actor realiza con el sistema para lograr ese objetivo. Se escribe en infinitivo y desde la perspectiva del actor, nunca como una función técnica interna.',
+    puntos: [
+      'Pasos: identificar los actores, relevar qué necesita cada uno, definir los casos de uso con verbos y graficar el diagrama.',
+      'Actor no es necesariamente usuario: una pasarela de pagos o un servicio de mapas también lo son.',
+      'Estructura básica: actor → acción u objetivo → sistema.'
+    ],
+    ojo: 'Las validaciones internas (verificar que el monto sea mayor que cero) no son casos de uso: son parte del comportamiento de uno.',
+    qs: [
+      { t: 'concepto', q: '¿Cuál está bien nombrado como caso de uso?', o: ['Iniciar sesión', 'ValidarUsuarioEnBaseDeDatos', 'EjecutarConsultaSQL', 'MostrarFormulario'],
+        w: 'El caso de uso expresa el objetivo del actor, en infinitivo. Las otras tres opciones son funciones técnicas internas del sistema: describen cómo se implementa algo, no lo que el actor quiere lograr.',
+        h: '¿Qué quiere hacer la persona?' },
+      { t: 'concepto', q: '¿El servicio de validación de tarjetas es un actor?', s: 'Gimnasio: para completar el registro, el sistema solicita los datos de la tarjeta, los envía al servicio de validación externo y, si la transacción es aprobada, confirma la operación.', o: ['Sí: es un sistema externo que interactúa con el sistema', 'No: los actores siempre son personas', 'No: es un caso de uso llamado Validar tarjeta', 'Solo si tiene usuario y contraseña'],
+        w: 'Un actor puede ser una persona, una organización o un sistema externo. El servicio de validación está fuera del sistema del gimnasio y se comunica con él, así que es un actor.',
+        h: 'Actor no es igual a persona frente a una pantalla.' },
+      { t: 'concepto', q: '¿Qué actor tiene el caso de uso "Registrar actividad"?', s: 'Gimnasio: el empleado administra las actividades: registra nuevas, modifica sus datos y establece horarios, profesores y cupos. Los profesores consultan las clases que tienen asignadas.', o: ['Empleado del gimnasio', 'Profesor', 'Socio', 'Gerencia'],
+        w: 'Según el enunciado, el empleado es quien registra y modifica actividades. El profesor solo consulta sus clases y los socios inscriptos; la gerencia consulta reportes.',
+        h: 'Releé quién "administra las actividades".' },
+      { t: 'concepto', q: '¿Quién tiene el caso de uso "Consultar reportes de ocupación"?', s: 'Gimnasio: la gerencia puede consultar reportes sobre la cantidad de socios, las actividades con mayor cantidad de reservas y la ocupación de las clases.', o: ['Gerencia', 'Empleado del gimnasio', 'Profesor', 'Servicio de validación'],
+        w: 'Cada caso de uso tiene que quedar asignado al actor que lo realiza. El enunciado le da los reportes a la gerencia; el empleado consulta socios y estado de membresías, que es otra cosa.',
+        h: 'Buscá en el enunciado quién pide reportes.' },
+      { t: 'concepto', q: '¿"Verificar que el monto sea mayor que cero" es un caso de uso?', s: 'Gastos personales: un usuario registra un nuevo gasto con categoría, monto, fecha y descripción. Antes de registrarlo, el sistema verifica que los datos sean válidos y que el monto sea mayor que cero.', o: ['No: es una validación interna dentro del caso de uso Registrar gasto', 'Sí: el actor es el sistema', 'Sí: todo lo que hace el sistema es un caso de uso', 'Sí, y su actor es el usuario'],
+        w: 'Los casos de uso representan objetivos del actor. El usuario quiere registrar un gasto; la verificación del monto es parte del comportamiento de ese caso de uso, no algo que el usuario busque hacer por sí mismo.',
+        h: '¿Es un objetivo del usuario o un paso que hace el sistema por dentro?' },
+      { t: 'concepto', q: '¿Cuál de estos es un actor del sistema?', s: 'Transporte compartido: el pasajero indica origen y destino. El sistema utiliza un servicio de mapas para calcular la distancia, estimar la duración y determinar el costo del viaje.', o: ['El servicio de mapas', 'Calcular costo del viaje', 'La base de datos de viajes', 'La pantalla de inicio'],
+        w: 'El servicio de mapas es un sistema externo que interactúa con la aplicación. Calcular el costo es una función, y la base de datos y la pantalla son partes internas del propio sistema, no actores.',
+        h: 'Un actor está fuera del sistema que se modela.' }
+    ] }
+] },
+{ id: 'pp2', mat: 'pp', final: true, nombre: 'Unidad 2 · Requerimientos e historias de usuario', desc: 'Elicitación, RF y RNF medibles, historias de usuario, criterios de aceptación e INVEST.', temas: [
+  { id: 'pp2m', dif: 'Medio', n: 'Ingeniería de requerimientos',
+    idea: 'Un requerimiento expresa qué se necesita del sistema para resolver el problema, no cómo programarlo. Los funcionales (RF) definen acciones y servicios, con su función y su comportamiento. Los no funcionales (RNF) definen atributos de calidad y restricciones, y tienen que ser medibles.',
+    puntos: [
+      'Etapas: descubrimiento, clasificación, priorización y negociación, especificación.',
+      'Técnicas: entrevistas, observación directa, cuestionarios y análisis de documentación.',
+      'RNF del producto (rendimiento, usabilidad, seguridad), de la organización (estándares, despliegue) y externos (legales, privacidad, accesibilidad).'
+    ],
+    ojo: '"El sistema debe ser rápido" no es verificable. Hace falta una métrica: "el 95 % de las búsquedas en menos de 3 segundos con 100 usuarios concurrentes".',
+    qs: [
+      { t: 'concepto', q: '¿Cuál está bien escrito como requerimiento?', o: ['El sistema permitirá al estudiante solicitar un turno de atención online', 'Usar una consulta SQL SELECT en la tabla turnos_db con React.js', 'Programar el botón de turnos en JavaScript', 'Crear una tabla turnos con tres columnas'],
+        w: 'Un requerimiento describe qué necesita el usuario. Las otras opciones son decisiones de diseño o de código: el cómo, que no se fuerza en el requerimiento. Como dice el material, construir correctamente el software equivocado sigue siendo un fracaso.',
+        h: 'El qué, no el cómo.' },
+      { t: 'concepto', q: '"El 95 % de las búsquedas debe completarse en menos de 3 segundos con 100 usuarios concurrentes." ¿Qué tipo de requerimiento es?', o: ['No funcional, de rendimiento', 'Funcional', 'No funcional, legal', 'Una historia de usuario'],
+        w: 'No describe una acción nueva del sistema, sino una cualidad: qué tan rápido responde. Y está bien escrito porque es medible.',
+        h: '¿Agrega una función o pone una condición de calidad?' },
+      { t: 'concepto', q: '¿Qué problema tiene el requerimiento "El sistema debe ser fácil de usar"?', o: ['No es verificable: hay que expresarlo con una métrica', 'Es funcional y debería ser no funcional', 'Describe el cómo en lugar del qué', 'Ninguno: está bien escrito'],
+        w: 'Las expresiones ambiguas generan disputas porque no hay forma de comprobarlas. El material propone, por ejemplo: "el 80 % de los usuarios nuevos debe completar una reserva en menos de 5 pasos sin consultar manuales".',
+        h: '¿Cómo comprobarías que se cumple?' },
+      { t: 'concepto', q: 'Querés entender el flujo real de trabajo acompañando al usuario en su puesto, sin sesgos. ¿Qué técnica usás?', o: ['Observación directa (etnografía)', 'Cuestionarios y encuestas', 'Análisis de documentación', 'Entrevista estructurada'],
+        w: 'La observación directa revela reglas de negocio implícitas y excepciones cotidianas que no aparecen en una entrevista. Los cuestionarios sirven cuando hay muchísimos usuarios y se buscan datos cuantitativos.',
+        h: 'Se trata de mirar lo que hace, en su lugar de trabajo.' },
+      { t: 'concepto', q: '"La cancelación se habilitará si faltan más de 24 horas y el sistema liberará la agenda." ¿Qué parte del requerimiento funcional es?', o: ['El comportamiento', 'La función', 'Un requerimiento no funcional', 'El actor'],
+        w: 'Un RF tiene una estructura doble: la función dice qué hace el sistema ("permitir cancelar un turno") y el comportamiento dice cómo reacciona según las reglas del negocio (la condición de 24 horas y la liberación de la agenda).',
+        h: 'Describe cómo reacciona el sistema, con sus reglas.' },
+      { t: 'concepto', q: 'Un requerimiento exige cumplir la ley de protección de datos personales. ¿Qué tipo de RNF es?', o: ['Externo', 'Del producto', 'De la organización', 'Funcional'],
+        w: 'Los RNF externos vienen de factores ajenos al sistema: leyes, privacidad, ética y accesibilidad. Los del producto especifican su comportamiento (rendimiento, usabilidad) y los de la organización vienen de las políticas de la institución.',
+        h: 'La ley viene de afuera del sistema y de la institución.' }
+    ] },
+  { id: 'pp2d', dif: 'Difícil', n: 'Del caso a RF, RNF e historias',
+    idea: 'La historia de usuario no reemplaza a los requerimientos: los empaqueta desde el valor para el usuario. El RF alimenta el "quiero" y los RNF se integran como criterios de aceptación. El formato es Como [rol] quiero [acción] para [beneficio], y los criterios se escriben como Dado, Cuando, Entonces.',
+    puntos: [
+      'Las 3 C de Ron Jeffries: Card (la tarjeta), Conversation (el diálogo) y Confirmation (los criterios de aceptación).',
+      'INVEST: Independiente, Negociable, Valiosa, Estimable, Pequeña (Small) y Testeable.',
+      'Ficha: número, usuario, prioridad, puntos, iteración, descripción, criterio de aceptación y observaciones.'
+    ],
+    ojo: 'Nunca omitas el "para": una historia sin beneficio claro no justifica su costo.',
+    qs: [
+      { t: 'concepto', q: '¿Por qué esto no sirve tal cual como RNF?', s: 'Centro de salud: "La institución desea que el sistema tenga una interfaz moderna y agradable".', o: ['Porque es subjetivo y no se puede verificar', 'Porque es un requerimiento funcional', 'Porque los RNF no pueden hablar de la interfaz', 'Porque describe el cómo programarlo'],
+        w: '"Moderna" y "agradable" dependen de quién mire. En la resolución del ejercicio, los RNF elegidos fueron la compatibilidad con celulares y el tiempo de respuesta, que sí se pueden comprobar.',
+        h: '¿Cómo demostrarías que se cumplió?' },
+      { t: 'concepto', q: '¿Dónde va la regla "un estudiante puede tener hasta cinco libros prestados"?', s: 'Biblioteca universitaria: los bibliotecarios registran préstamos y devoluciones. Un estudiante podrá tener hasta cinco libros prestados simultáneamente.', o: ['En el comportamiento del RF de registro de préstamos', 'En un RNF de rendimiento', 'En un actor nuevo', 'En ningún lado: es un dato irrelevante'],
+        w: 'Es una regla de negocio: al registrar un préstamo, el sistema verifica el límite y, si se alcanzó, no deja registrar otro. Eso es el comportamiento del requerimiento funcional, como en la resolución del ejercicio.',
+        h: 'Es una condición que el sistema controla al registrar.' },
+      { t: 'concepto', q: '¿Cómo se completa correctamente esta historia?', s: '"Como estudiante quiero solicitar un turno online…"', o: ['…para evitar hacer filas presenciales en la sede.', '…para que el sistema guarde el turno en la base de datos.', '…usando React y una API REST.', '…en menos de 2 segundos.'],
+        w: 'El "para" expresa el beneficio o el valor para el usuario. Guardar en la base de datos es una función técnica, React es el cómo, y "menos de 2 segundos" es un RNF que va en los criterios de aceptación.',
+        h: 'El "para" responde por qué lo quiere el usuario.' },
+      { t: 'concepto', q: 'La cancelación tiene que procesarse en menos de 2 segundos. ¿Dónde se ubica esa condición?', o: ['En los criterios de aceptación de la historia (o en la Definición de Hecho)', 'En el "para" de la historia', 'En el nombre de la historia', 'En el actor'],
+        w: 'Los RNF se integran como criterios de aceptación o en la Definición de Hecho (DoD). En el ejemplo de la cátedra: "Entonces el sistema cambia el estado a Cancelado en menos de 2 segundos".',
+        h: 'Es lo que hay que verificar para dar por terminada la historia.' },
+      { t: 'concepto', q: '¿Qué criterio INVEST incumple esta historia?', s: '"Como usuario quiero gestionar todo el sistema para poder usarlo."', o: ['Small y Estimable: es demasiado grande y vaga, hay que dividirla', 'Independent, porque depende de otra historia', 'Negotiable, porque es un contrato rígido', 'Ninguno: cumple con todo'],
+        w: 'Es una épica: no entra en un sprint y el equipo no puede estimar su esfuerzo. Tampoco expresa un valor concreto en el "para". Hay que partirla en historias pequeñas, cada una con su beneficio.',
+        h: '¿Entraría en un solo sprint?' },
+      { t: 'concepto', q: 'En las 3 C de las historias de usuario, ¿qué es la Confirmación?', o: ['Los criterios de aceptación que definen cuándo la historia está terminada', 'La aprobación del cliente por escrito', 'La reunión diaria del equipo', 'La tarjeta con la frase de la historia'],
+        w: 'Card es la tarjeta que sirve de recordatorio, Conversation es el diálogo continuo para detallar reglas, y Confirmation son los criterios de aceptación que determinan cuándo la historia está correcta y lista.',
+        h: 'Confirmar que está hecha.' }
+    ] }
+] },
+{ id: 'pp3', mat: 'pp', final: true, nombre: 'Unidad 3 · Metodologías ágiles y Product Backlog', desc: 'Manifiesto ágil, Scrum, Story Points, Planning Poker y orden del backlog.', temas: [
+  { id: 'pp3m', dif: 'Medio', n: 'Manifiesto ágil y Scrum',
+    idea: 'Las metodologías ágiles son iterativas e incrementales y priorizan la flexibilidad, la colaboración y la entrega frecuente de valor. En Scrum el trabajo se divide en sprints, y cada sprint termina con un incremento que se muestra al cliente.',
+    puntos: [
+      'Roles: Product Owner (el negocio), Scrum Master (que el equipo sea productivo y se respete Scrum) y el equipo de desarrollo.',
+      'Artefactos: Product Backlog (del Product Owner), Sprint Backlog (del equipo) e Incremento.',
+      'Reuniones: Sprint Planning, Daily (de 10 a 15 minutos), Revisión y Retrospectiva.'
+    ],
+    ojo: 'Revisión y retrospectiva no son lo mismo: la revisión inspecciona el incremento; la retrospectiva, al propio equipo.',
+    qs: [
+      { t: 'concepto', q: '¿Cuál de estos es un valor del Manifiesto Ágil?', o: ['Software que funciona por sobre documentación exhaustiva', 'Seguir un plan por sobre responder al cambio', 'Procesos y herramientas por sobre individuos e interacciones', 'Negociación contractual por sobre colaboración con el cliente'],
+        w: 'Los cuatro valores (Utah, 2001) priorizan a los individuos, el software funcionando, la colaboración con el cliente y la respuesta al cambio. Las otras tres opciones están invertidas.',
+        h: 'Tres de las opciones están dadas vuelta.' },
+      { t: 'concepto', q: '"Construir un bosquejo, validarlo y refinarlo gradualmente." ¿Qué describe?', o: ['El desarrollo iterativo', 'El desarrollo incremental', 'La metodología tradicional', 'La retrospectiva'],
+        w: 'Iterativo es ir refinando sobre algo que ya existe. Incremental es construir bloque a bloque. Las metodologías ágiles combinan las dos cosas.',
+        h: 'Iterar es repetir y mejorar.' },
+      { t: 'concepto', q: '¿De qué es responsable el Scrum Master?', o: ['De que el equipo sea productivo y se respeten los principios de Scrum', 'De priorizar el Product Backlog', 'De programar las historias más difíciles', 'De aprobar el presupuesto del proyecto'],
+        w: 'El Scrum Master ayuda al equipo a cumplir el objetivo y cuida que se respete Scrum. Priorizar el backlog es tarea del Product Owner, responsable desde el punto de vista del negocio.',
+        h: 'No es el jefe ni el dueño del producto.' },
+      { t: 'concepto', q: '¿De quién es el Sprint Backlog?', o: ['Del equipo de desarrollo', 'Del Product Owner', 'Del Scrum Master', 'Del cliente'],
+        w: 'El Sprint Backlog es la selección de historias para el sprint, descompuestas en tareas técnicas por el equipo, que es su dueño. El Product Backlog, en cambio, es del Product Owner.',
+        h: 'Lo arma quien va a hacer el trabajo.' },
+      { t: 'concepto', q: '¿Cuánto debería durar la Daily Meeting?', o: ['Entre 10 y 15 minutos', 'Una hora', 'Todo el primer día del sprint', 'Lo que haga falta para resolver los problemas'],
+        w: 'Es una reunión diaria corta para coordinar al equipo. Los problemas que requieren más tiempo se tratan aparte.',
+        h: 'Es diaria: tiene que ser breve.' },
+      { t: 'concepto', q: '¿Para qué sirve la Retrospectiva del sprint?', o: ['Para que el equipo se inspeccione a sí mismo y arme un plan de mejoras', 'Para mostrarle el incremento al cliente', 'Para estimar las historias del próximo sprint', 'Para asignar culpas por lo que salió mal'],
+        w: 'La retrospectiva mira cómo trabajó el equipo y qué mejorar en el próximo sprint. Mostrar el incremento a las partes interesadas es la Revisión del sprint.',
+        h: 'Retro: mirar hacia atrás, hacia el propio equipo.' }
+    ] },
+  { id: 'pp3d', dif: 'Difícil', n: 'Estimar y ordenar el backlog',
+    idea: 'El Product Backlog es una lista ordenada, dinámica y viva de todo el trabajo conocido. El Product Owner prioriza por valor y los developers estiman por tamaño relativo con Story Points en escala Fibonacci (1, 2, 3, 5, 8, 13). El orden final considera prioridad, valor y dependencias.',
+    puntos: [
+      'Story Points: complejidad + trabajo + incertidumbre. No equivalen a horas.',
+      '1-2 sencilla, 3 mediana, 5 compleja, 8-13 muy grande o épica: dividir.',
+      'Planning Poker: lectura, votación anónima, revelación simultánea y discusión de divergencias.'
+    ],
+    ojo: 'Una historia de prioridad alta puede tener que esperar si depende de otra que todavía no está hecha.',
+    qs: [
+      { t: 'concepto', q: '¿Qué miden los Story Points?', o: ['El esfuerzo relativo: complejidad, trabajo e incertidumbre combinados', 'Las horas exactas que lleva cada historia', 'El valor de negocio de la historia', 'La cantidad de líneas de código'],
+        w: 'Se estima por tamaño relativo, comparando una historia contra otra de referencia, porque las horas varían según la experiencia de cada programador. El valor lo define el Product Owner con la prioridad.',
+        h: 'Son relativos, no absolutos.' },
+      { t: 'concepto', q: 'En el Planning Poker, una persona vota 2 y otra 8 para la misma historia. ¿Qué se hace?', o: ['Quienes votaron el valor más alto y el más bajo explican sus razones y se vuelve a votar', 'Se promedia y se asigna 5', 'Decide el Product Owner', 'Se deja la estimación más baja para avanzar rápido'],
+        w: 'La divergencia muestra que hay algo que una de las dos personas ve y la otra no. Se discute, se aclara el alcance y se re-vota hasta llegar a un consenso.',
+        h: 'La diferencia es información, no un número para promediar.' },
+      { t: 'concepto', q: '¿Por qué "Registrar cliente" queda arriba de "Solicitar turno" en el backlog?', s: 'TurnoFácil, la clínica veterinaria.', tabla: { cols: ['Historia', 'Puntos', 'Prioridad'], filas: [['Registrar cliente', '2', 'Alta'], ['Registrar mascota', '1', 'Alta'], ['Solicitar turno', '5', 'Alta'], ['Consultar disponibilidad', '5', 'Alta']] }, o: ['Por dependencia: sin un cliente registrado no se puede solicitar un turno', 'Porque tiene menos puntos y se termina más rápido', 'Porque está ordenado alfabéticamente', 'Porque el cliente lo pidió primero'],
+        w: 'Las dos son de prioridad alta, pero solicitar un turno necesita que el cliente (y su mascota) ya estén registrados. Las dependencias influyen en el orden final del backlog.',
+        h: '¿Qué tiene que existir antes de pedir un turno?' },
+      { t: 'concepto', q: '¿Dónde va "Enviar recordatorios" en el backlog?', tabla: { cols: ['Historia', 'Puntos', 'Prioridad'], filas: [['Cancelar turno', '3', 'Media'], ['Consultar turnos asignados', '3', 'Baja'], ['Enviar recordatorios', '8', 'Baja']] }, o: ['Al final: es de prioridad baja y de mucho esfuerzo', 'Primero: es la de más puntos', 'En el medio, para equilibrar el sprint', 'Afuera del backlog: no es una historia'],
+        w: 'En el backlog de la cátedra queda último: aporta menos valor inmediato y requiere mucho esfuerzo (8 puntos). Primero se ordena por prioridad y valor; los puntos miden esfuerzo, no importancia.',
+        h: 'Los puntos miden esfuerzo, no prioridad.' },
+      { t: 'concepto', q: '¿Quién prioriza y quién estima?', o: ['El Product Owner prioriza por valor; los developers estiman en Story Points', 'Los developers priorizan y el Product Owner estima', 'El Scrum Master hace las dos cosas', 'El cliente hace las dos cosas'],
+        w: 'Es la síntesis del material: priorización y estimación son cosas distintas y las hacen roles distintos. El Product Owner ordena por valor de negocio; el equipo que va a construir estima el esfuerzo.',
+        h: 'El que sabe del negocio y el que sabe del trabajo técnico.' },
+      { t: 'concepto', q: '¿Por qué el Product Backlog puede cambiar durante el proyecto?', o: ['Porque es dinámico: evoluciona a medida que se aprende sobre usuarios, mercado y tecnología', 'Porque se hizo mal al principio', 'Porque el Scrum Master lo reescribe cada día', 'No puede cambiar: se congela en el primer sprint'],
+        w: 'El backlog es un instrumento vivo de diálogo: sus elementos se revisan, aclaran, estiman y reordenan. Las metodologías tradicionales planifican todo al inicio; las ágiles planifican el valor de forma continua.',
+        h: 'Es una de las preguntas de la tercera instancia evaluativa.' }
+    ] }
+] }
+];
+
+const UX = [
+{ id: 'ux1', mat: 'ux', final: true, nombre: 'Unidad 1 · Introducción al diseño UX/UI', desc: 'UX y UI, Don Norman, historia de la interacción y usabilidad.', temas: [
+  { id: 'ux1m', dif: 'Medio', n: 'UX, UI y Don Norman',
+    idea: 'UX es "todo lo que siente una persona al interactuar con un producto" (Don Norman): abarca usabilidad, arquitectura de la información, accesibilidad y diseño de interacción. UI es el punto de contacto visual: botones, íconos, tipografía, colores. El proceso centrado en el usuario es un ciclo de análisis, elaboración y prueba.',
+    puntos: [
+      'Norman: si alguien se equivoca con un objeto simple, la culpa es del diseño, no de la persona.',
+      'Principios fundamentales: aportar un buen modelo conceptual y hacer que las cosas sean visibles.',
+      'Siete principios: conocimiento en el mundo y en la cabeza, simplificar tareas, hacer visible, buenas topografías, limitaciones, margen de error y normalizar.'
+    ],
+    ojo: 'UX no se controla directamente: ocurre dentro del usuario. Se diseña y se facilita.',
+    qs: [
+      { t: 'concepto', q: 'Botones, íconos, tipografía y paleta de colores forman parte de…', o: ['La UI: el punto de contacto visual del usuario con el producto', 'La UX: todo lo que siente el usuario', 'La arquitectura de la información', 'El backend'],
+        w: 'La UI es la capa final, la piel del sistema, que se controla con guías de estilo y componentes. La UX es más amplia: es la experiencia completa, que incluye a la UI pero no se reduce a ella.',
+        h: 'Es lo que se ve y se toca.' },
+      { t: 'concepto', q: 'Una puerta necesita un cartel que diga "Empujar". Según Norman…', o: ['El diseño fracasó: las cosas sencillas no deberían necesitar instrucciones', 'Es un buen diseño porque informa al usuario', 'La culpa es de quien no lee el cartel', 'Es inevitable en cualquier puerta'],
+        w: '"Cuando las cosas sencillas necesitan imágenes, etiquetas o instrucciones, el diseño ha fracasado." Las cosas complejas pueden exigir una explicación; las simples, no.',
+        h: 'Norman culpa al diseño, no al usuario.' },
+      { t: 'concepto', q: 'Una interfaz muestra todas las opciones disponibles para que el usuario no tenga que memorizar comandos. ¿Qué aprovecha?', o: ['El conocimiento en el mundo', 'El conocimiento en la cabeza', 'El elementismo rampante', 'La normalización'],
+        w: 'El conocimiento en el mundo es la información que la interfaz pone a la vista para actuar sin recordar nada. El conocimiento en la cabeza es lo que el usuario tiene que memorizar, como comandos o contraseñas, y es más propenso a errores.',
+        h: '¿La información está en la pantalla o en la memoria?' },
+      { t: 'concepto', q: '¿Qué es el "elementismo rampante"?', o: ['La tendencia a agregar funciones y botones innecesarios a un producto', 'El exceso de colores en una interfaz', 'Usar demasiados elementos HTML', 'Un error de programación'],
+        w: 'Norman lo describe como una enfermedad que aparece "de forma muy natural, muy inocente": cada función extra parece buena idea, hasta que el producto se vuelve complicado. El mejor remedio es la prevención.',
+        h: 'Elementos de más.' },
+      { t: 'concepto', q: '¿Con cuál de los siete principios de Norman se relaciona el Ctrl+Z?', o: ['Diseñar dejando un margen de error', 'Explotar la fuerza de las limitaciones', 'Realizar bien las topografías', 'Cuando todo falla, normalizar'],
+        w: 'Diseñar con margen de error significa asumir que la gente se va a equivocar y darle forma de recuperarse. Deshacer es el ejemplo más claro.',
+        h: 'Deshacer permite equivocarse sin consecuencias.' },
+      { t: 'concepto', q: '¿Quién presentó en 1968 el mouse, las ventanas y los hipervínculos, en la "Madre de todas las demos"?', o: ['Douglas Engelbart', 'Ivan Sutherland', 'Steve Jobs', 'Tim Berners-Lee'],
+        w: 'Sutherland creó Sketchpad en 1963, el primer programa gráfico interactivo. Berners-Lee creó la web en 1989. La Macintosh de Apple popularizó la interfaz gráfica en 1984.',
+        h: 'Es de la línea de tiempo de la clase 1.' }
+    ] },
+  { id: 'ux1d', dif: 'Difícil', n: 'Usabilidad',
+    idea: 'Según la norma ISO 9241-11, la usabilidad es el grado en que un producto puede ser usado por determinados usuarios para conseguir objetivos con eficacia, eficiencia y satisfacción en un contexto de uso. Es el motor operativo de la UX.',
+    puntos: [
+      'Eficacia: precisión y grado de terminación con que se logra el objetivo.',
+      'Eficiencia: recursos usados (tiempo, esfuerzo, dinero, materiales) en relación con los resultados.',
+      'Satisfacción: reacciones físicas, cognitivas y emocionales del usuario.',
+      'Atributos de Nielsen: facilidad de aprendizaje, eficiencia, recordabilidad, errores y satisfacción. Krug: "¡No me hagas pensar!".'
+    ],
+    ojo: 'Algo puede ser eficiente y no eficaz, y al revés: usa pocos recursos pero no logra el resultado.',
+    qs: [
+      { t: 'concepto', q: 'Según la ISO 9241-11, ¿cuáles son los tres componentes de la usabilidad?', o: ['Eficacia, eficiencia y satisfacción', 'Rapidez, belleza y seguridad', 'Aprendizaje, memoria y errores', 'Accesibilidad, contraste y color'],
+        w: 'La definición habla de lograr objetivos con eficacia, eficiencia y satisfacción en un contexto de uso. Aprendizaje, memoria y errores son parte de los atributos de calidad de Nielsen, que es otra clasificación.',
+        h: 'Es la definición de la norma, no la de Nielsen.' },
+      { t: 'concepto', q: 'Un usuario termina bien una compra, pero tarda 12 minutos y tiene que repetir pasos. ¿Qué componente falla?', o: ['La eficiencia', 'La eficacia', 'La satisfacción, únicamente', 'Ninguno: la compra se completó'],
+        w: 'El objetivo se logró, así que la eficacia está. Lo que falla es la relación entre los recursos usados (tiempo y esfuerzo) y el resultado: la eficiencia.',
+        h: 'Llegó al resultado, pero ¿a qué costo?' },
+      { t: 'concepto', q: 'Una app permite cargar un gasto en 3 segundos, pero lo guarda en la categoría equivocada. ¿Qué pasa?', o: ['Es eficiente pero no eficaz', 'Es eficaz pero no eficiente', 'Es eficaz y eficiente', 'No es ni eficaz ni eficiente'],
+        w: 'Usa pocos recursos (eficiente) pero no logra el resultado correcto (falla la precisión, que es parte de la eficacia). La norma aclara que una cosa no garantiza la otra.',
+        h: 'Fue rápida, pero ¿hizo bien lo que tenía que hacer?' },
+      { t: 'concepto', q: 'Después de un mes sin usar la app, ¿se recupera la destreza fácilmente? ¿Qué atributo de Nielsen mide eso?', o: ['La recordabilidad', 'La facilidad de aprendizaje', 'La eficiencia', 'La satisfacción'],
+        w: 'La recordabilidad (memorability) mide cuánto cuesta volver a usar algo después de un tiempo. La facilidad de aprendizaje mide qué tan fácil es hacer las tareas básicas la primera vez.',
+        h: 'Tiene que ver con la memoria.' },
+      { t: 'concepto', q: '¿Qué quiere decir la regla de Steve Krug "¡No me hagas pensar!"?', o: ['Que una página tiene que ser obvia: el usuario no debería detenerse a pensar cómo usarla', 'Que el usuario no debe tomar ninguna decisión', 'Que hay que poner menos texto en la página', 'Que las instrucciones tienen que estar al principio'],
+        w: 'Cada duda (¿esto es un botón?, ¿dónde hago clic?) suma carga mental. La idea es reducir el ruido para que todo se entienda de un vistazo.',
+        h: 'Es sobre la carga mental de quien usa la página.' },
+      { t: 'concepto', q: '¿Qué forma el contexto de uso, según la norma?', o: ['Los usuarios, los objetivos y tareas, los recursos y el entorno', 'Solo el dispositivo en el que se usa', 'El lenguaje de programación y el servidor', 'La paleta de colores y la tipografía'],
+        w: 'La usabilidad no es una propiedad aislada del producto: depende de quién lo usa, para qué, con qué recursos y en qué entorno. El mismo producto puede ser usable en un contexto y no en otro.',
+        h: 'Quién, para qué, con qué y dónde.' }
+    ] }
+] },
+{ id: 'ux2', mat: 'ux', final: true, nombre: 'Unidad 2 · Técnicas de investigación y desarrollo', desc: 'User flow, wireframes, Figma, arquitectura de la información e investigación con usuarios.', temas: [
+  { id: 'ux2m', dif: 'Medio', n: 'User flow, bocetos y Figma',
+    idea: 'El user flow es el diagrama de los pasos que sigue un usuario para completar una tarea. Se empieza por el happy path, el camino ideal sin errores. Después se boceta con wireframes de baja fidelidad para explorar ideas antes de agregar detalle.',
+    puntos: [
+      'Recorrido del diseño: empatizar, idear, prototipar y probar.',
+      'Análisis previo: problema (pain point), usuario, industria, competencia, contexto PEST e hipótesis de negocio.',
+      'Herramientas: Figma, FigJam y bibliotecas como Material 3 Design Kit y Simple Design System.'
+    ],
+    ojo: 'Antes de diagramar, preguntate qué intenta lograr el usuario, qué le da confianza y qué le genera dudas o frustración.',
+    qs: [
+      { t: 'concepto', q: '¿Qué es el "happy path"?', o: ['El camino ideal en el que el usuario completa la tarea sin errores ni desvíos', 'El recorrido más corto entre dos pantallas', 'Una prueba con usuarios felices', 'El diseño final de alta fidelidad'],
+        w: 'Se diseña primero el flujo principal, el que sigue el usuario cuando todo sale bien. Después se agregan las ramas de decisiones y errores.',
+        h: 'Es por donde se empieza a diseñar el producto.' },
+      { t: 'concepto', q: 'En un user flow, ¿qué representa un rombo?', o: ['Una decisión: un punto donde el flujo se ramifica', 'El inicio o el final', 'Una pantalla', 'Un error'],
+        w: 'Las referencias de la cátedra: rectángulos redondeados para inicio y final, rectángulos para mostrar pantallas, paralelogramos para la interacción del usuario, rombos para decisiones y flechas para la dirección del flujo.',
+        h: 'En los diagramas de flujo, ahí se elige un camino.' },
+      { t: 'concepto', q: '¿Cómo se representan el inicio y el final de un user flow?', o: ['Con rectángulos redondeados', 'Con rombos', 'Con flechas', 'Con paralelogramos'],
+        w: 'Los rectángulos redondeados marcan los puntos de entrada y salida, y también pueden mostrar inicios y finales alternativos. Los paralelogramos representan acciones del usuario, como completar un formulario.',
+        h: 'Son las formas suaves de los extremos.' },
+      { t: 'concepto', q: '¿Para qué sirve un wireframe de baja fidelidad?', o: ['Para explorar ideas y estructura de forma simple, antes de agregar detalles y pruebas', 'Para mostrarle al cliente el diseño final con colores', 'Para programar la interfaz', 'Para medir el tiempo de carga'],
+        w: 'Con un marco de pantalla, cajas de texto, formas simples e íconos se visualiza la estructura y se detectan mejoras antes de invertir tiempo en el detalle. El prototipo de alta fidelidad viene después.',
+        h: 'Baja fidelidad: todavía sin detalle.' },
+      { t: 'concepto', q: '¿Qué es FigJam?', o: ['Una pizarra digital colaborativa dentro de Figma, útil para diagramas de flujo', 'Un plugin para exportar código', 'La versión de escritorio de Figma', 'Una biblioteca de íconos de Material 3'],
+        w: 'FigJam se usa para diagramar y hacer lluvia de ideas en equipo, por ejemplo para armar el user flow. Figma, en cambio, es donde se diseñan los wireframes y prototipos.',
+        h: 'Es una pizarra.' },
+      { t: 'concepto', q: 'En el análisis del contexto, ¿qué significa PEST?', o: ['Político, Económico, Social y Tecnológico', 'Producto, Estrategia, Servicio y Testeo', 'Personas, Escenarios, Soluciones y Tareas', 'Prototipo, Evaluación, Solución y Testing'],
+        w: 'El análisis PEST mira los factores del entorno que pueden afectar al producto. Es parte de la fase de análisis e investigación, junto con el estado del arte y el análisis de la competencia.',
+        h: 'Son cuatro factores del entorno.' }
+    ] },
+  { id: 'ux2d', dif: 'Difícil', n: 'Arquitectura de la información e investigación',
+    idea: 'La arquitectura de la información estructura, organiza y etiqueta los elementos de un entorno para facilitar la localización de la información y los servicios (Pérez Montoro). Tiene cuatro sistemas: organización, etiquetado, navegación y búsqueda.',
+    puntos: [
+      'Organización: ¿cómo está clasificada la información? Etiquetado: ¿qué significa este botón? Navegación: ¿dónde estoy y a dónde puedo ir? Búsqueda: ¿tiene exactamente lo que necesito?',
+      'Para elegir técnicas: ¿hay acceso directo a usuarios?, ¿se quiere validar o explorar?, ¿se releva lo que la gente dice o lo que hace?',
+      'Mapa de empatía: piensa y siente, ve, oye, dice y hace, dolores y ganancias.'
+    ],
+    ojo: 'Los diseñadores también tienen sesgos: por eso se investiga con usuarios reales.',
+    qs: [
+      { t: 'concepto', q: 'El usuario se pregunta "¿dónde estoy y a dónde puedo ir?". ¿Qué sistema de la arquitectura de la información responde a eso?', o: ['Navegación', 'Organización', 'Etiquetado', 'Búsqueda'],
+        w: 'La navegación facilita el movimiento, con barras globales constantes y menús locales. La organización estructura y agrupa, el etiquetado nombra y la búsqueda permite la localización directa.',
+        h: 'Es sobre moverse por el sitio.' },
+      { t: 'concepto', q: 'El usuario no entiende qué hace un ícono del menú. ¿Qué sistema falla?', o: ['Etiquetado', 'Navegación', 'Búsqueda', 'Organización'],
+        w: 'El etiquetado nombra y representa la información, con texto o con íconos. Tiene que ser descriptivo y consistente: si no se entiende qué significa un botón, falla el etiquetado aunque la navegación esté bien.',
+        h: 'Es sobre los nombres y los símbolos.' },
+      { t: 'concepto', q: 'Querés saber qué hace realmente la gente en tu sitio, no lo que dice que hace. ¿Qué técnica conviene?', o: ['Mapas de calor y observación de uso', 'Una encuesta de opinión', 'Una entrevista grupal', 'Preguntarle al cliente'],
+        w: 'Una de las preguntas para elegir técnicas es si se releva lo que la gente dice o lo que hace. Los mapas de calor (por ejemplo con Microsoft Clarity) muestran el comportamiento real: dónde hacen clic y hasta dónde bajan.',
+        h: 'Decir y hacer no siempre coinciden.' },
+      { t: 'concepto', q: 'Airbnb descubrió que sus clientes valoran ver fotos y descripciones detalladas antes de reservar. ¿En qué cuadrante del mapa de empatía va eso?', o: ['Qué ve', 'Qué oye', 'Qué dice y hace', 'Qué piensa y siente'],
+        w: 'En el ejemplo de la clase, lo que el usuario ve (fotografías y descripciones) corresponde al cuadrante "ver". Las opiniones de otros van en "oír", y compartir experiencias en redes va en "decir y hacer".',
+        h: 'Fotos y descripciones son estímulos visuales.' },
+      { t: 'concepto', q: '¿Para qué sirve un mapa de empatía?', o: ['Para sintetizar la investigación y detectar diferencias entre lo que una persona dice y lo que hace o siente', 'Para diseñar la paleta de colores', 'Para ordenar el Product Backlog', 'Para medir el tiempo de carga de las páginas'],
+        w: 'Ordena citas y observaciones en un cuadro visible, ayuda a encontrar insights, alinea al equipo y sirve de base para construir Personas y el recorrido del usuario.',
+        h: 'Empatía: ponerse en el lugar del otro.' },
+      { t: 'concepto', q: '¿Cómo define Pérez Montoro la arquitectura de la información?', o: ['La disciplina que estructura, organiza y etiqueta los elementos de un entorno para facilitar la localización de la información', 'La estructura de la base de datos del sistema', 'El diseño de los servidores de una aplicación', 'El orden de las clases de un programa'],
+        w: 'No tiene que ver con la infraestructura técnica: es sobre cómo el usuario encuentra la información y los servicios, para mejorar su utilidad y aprovechamiento.',
+        h: 'Es sobre encontrar información, no sobre servidores.' }
+    ] }
+] },
+{ id: 'ux3', mat: 'ux', final: true, nombre: 'Unidad 3 · Accesibilidad y Design Thinking', desc: 'WCAG, principios POUR, contraste, tecnologías asistivas, ARIA y Design Thinking.', temas: [
+  { id: 'ux3m', dif: 'Medio', n: 'Accesibilidad digital',
+    idea: 'La accesibilidad digital es diseñar productos que puedan ser percibidos, comprendidos, navegados e interactuados por la mayor cantidad de personas posible, sin importar sus capacidades o su situación. Las pautas WCAG del W3C se organizan en cuatro principios: POUR.',
+    puntos: [
+      'Perceptible: texto alternativo, subtítulos, no depender solo del color, contraste de 4.5:1 (3:1 para texto grande).',
+      'Operable: todo por teclado, foco visible, alternativas a gestos complejos, áreas de toque de 24 a 44 px.',
+      'Comprensible: idioma declarado, consistencia, mensajes de error que digan qué falló y cómo resolverlo.',
+      'Robusto: HTML semántico y ARIA solo cuando hace falta.'
+    ],
+    ojo: 'Río Negro adhirió a la Ley Nacional de Accesibilidad Digital mediante la Ley N.° 4904.',
+    qs: [
+      { t: 'concepto', q: '¿Qué significan las siglas POUR?', o: ['Perceptible, Operable, Comprensible (Understandable) y Robusto', 'Personas, Objetivos, Usuarios y Resultados', 'Prototipo, Operación, Uso y Revisión', 'Perceptible, Ordenado, Útil y Rápido'],
+        w: 'Son los cuatro principios en torno a los que se estructuran las WCAG: la información se tiene que poder percibir, la interfaz se tiene que poder operar, el contenido tiene que entenderse y el código tiene que funcionar con cualquier tecnología.',
+        h: 'La U viene del inglés understandable.' },
+      { t: 'concepto', q: '¿Cuál es la relación de contraste mínima entre el texto normal y su fondo?', o: ['4.5:1', '3:1', '2:1', '7:1'],
+        w: 'Para texto normal se pide al menos 4.5:1; para texto grande alcanza con 3:1. Es una pauta del principio Perceptible.',
+        h: 'El texto grande pide menos que el normal.' },
+      { t: 'concepto', q: 'Un formulario marca los campos con error solo poniéndolos en rojo. ¿Qué principio incumple?', o: ['Perceptible: la información no puede depender solo del color', 'Operable', 'Robusto', 'Ninguno: el rojo es universal'],
+        w: 'Una persona con daltonismo o con baja visión puede no distinguir el rojo. Hay que reforzar con texto, un ícono o un mensaje que diga qué campo falló.',
+        h: '¿Todos perciben los colores igual?' },
+      { t: 'concepto', q: 'Los botones de una app son tan chicos y están tan juntos que se tocan por error. ¿Qué pauta incumplen?', o: ['El área de toque mínima, del principio Operable', 'El contraste, del principio Perceptible', 'El idioma de la página, del principio Comprensible', 'La semántica HTML, del principio Robusto'],
+        w: 'Los elementos táctiles necesitan un tamaño y una separación mínimos, de 24×24 a 44×44 px según la pauta, para evitar pulsaciones accidentales. Es parte de que la interfaz se pueda operar.',
+        h: 'Es un problema al usar la interfaz, no al verla.' },
+      { t: 'concepto', q: '¿Para qué se declara <html lang="es">?', o: ['Para que el lector de pantalla use la pronunciación y la entonación correctas', 'Para traducir automáticamente la página', 'Para que el sitio aparezca solo en países de habla hispana', 'Para mejorar el contraste'],
+        w: 'Es una pauta del principio Comprensible. Sin el idioma declarado, el lector de pantalla puede leer el español con la pronunciación de otro idioma.',
+        h: 'Pensá en un lector de pantalla leyendo en voz alta.' },
+      { t: 'concepto', q: '¿Qué organismo define las pautas WCAG?', o: ['El W3C (World Wide Web Consortium)', 'Google, a través de Material Design', 'Apple, con las Human Interface Guidelines', 'La ONTI'],
+        w: 'Las WCAG son normas internacionales creadas por el W3C. La ONTI publica guías de recomendaciones para Argentina, y Material Design y HIG tienen sus propias secciones de accesibilidad.',
+        h: 'Es el organismo de los estándares web.' }
+    ] },
+  { id: 'ux3d', dif: 'Difícil', n: 'Accesibilidad aplicada y Design Thinking',
+    idea: 'La accesibilidad se resuelve en el diseño y en el código: los lectores de pantalla leen la estructura del HTML, no lo que se ve con CSS. El Design Thinking es el marco general del diseño UX/UI: una metodología centrada en las personas en cinco fases.',
+    puntos: [
+      'Design Thinking: empatizar, definir (el POV), idear, prototipar (el MVP) y evaluar.',
+      '"No ARIA es mejor que un mal ARIA": primero HTML semántico nativo, ARIA solo para componentes personalizados complejos.',
+      'Puntos de referencia (landmarks): grandes bloques como navegación, búsqueda, principal, banner o contentinfo.'
+    ],
+    ojo: 'Si una función solo se activa al pasar el mouse, quien navega con teclado o con lector de pantalla no puede usarla.',
+    qs: [
+      { t: 'concepto', q: '¿Qué significa "no ARIA es mejor que un mal ARIA"?', o: ['Que conviene usar HTML semántico nativo y recurrir a ARIA solo cuando hace falta, porque un uso incorrecto rompe la accesibilidad', 'Que ARIA está prohibido en sitios públicos', 'Que ARIA solo sirve en aplicaciones móviles', 'Que cuantos más atributos ARIA, más accesible es el sitio'],
+        w: 'Las etiquetas semánticas ya traen su significado para las tecnologías de asistencia. Atributos como role o aria-expanded se usan para enriquecer componentes personalizados complejos; mal usados, confunden al lector de pantalla.',
+        h: 'Lo nativo primero.' },
+      { t: 'concepto', q: '¿En qué se basan los lectores de pantalla para recorrer una página?', o: ['En la estructura jerárquica del HTML', 'En el diseño visual que define el CSS', 'En el tamaño de las tipografías', 'En los colores de los botones'],
+        w: 'CSS define cómo se ve la página, pero el lector de pantalla sigue el orden y la jerarquía del HTML: títulos, regiones, listas, etiquetas. Por eso la estructura del código importa tanto como el diseño.',
+        h: 'El lector no ve la pantalla.' },
+      { t: 'concepto', q: 'Un menú desplegable solo se abre al pasar el mouse por encima. ¿Qué principio incumple?', o: ['Operable: toda la funcionalidad tiene que poder usarse con el teclado', 'Perceptible', 'Comprensible', 'Ninguno, si el menú se ve bien'],
+        w: 'Una persona que navega con teclado, con interruptores o con lector de pantalla no puede hacer hover. La pauta pide que todo sea accesible por teclado, con un orden de foco lógico y el foco visible.',
+        h: '¿Cómo lo abriría alguien que no usa mouse?' },
+      { t: 'concepto', q: 'Al enviar un formulario aparece solo "Error 0x34". ¿Qué principio incumple?', o: ['Comprensible: el mensaje tiene que indicar qué campo falló y cómo resolverlo', 'Robusto', 'Operable', 'Perceptible'],
+        w: 'La entrada de datos asistida pide mensajes de error descriptivos y constructivos. Un código técnico no le dice al usuario qué hizo mal ni cómo corregirlo.',
+        h: '¿El usuario entiende qué pasó?' },
+      { t: 'concepto', q: '¿Cuál es el orden de las fases del Design Thinking?', o: ['Empatizar, definir, idear, prototipar y evaluar', 'Idear, empatizar, prototipar, definir y evaluar', 'Definir, idear, empatizar, evaluar y prototipar', 'Prototipar, evaluar, empatizar, definir e idear'],
+        w: 'Primero se sale de la burbuja del diseñador para entender a las personas (empatizar), después se define el problema con un punto de vista, se generan ideas, se construye un prototipo y se evalúa.',
+        h: 'Se empieza por las personas.' },
+      { t: 'concepto', q: 'En la fase de prototipar del Design Thinking, ¿qué se busca construir?', o: ['Un producto mínimo viable (MVP)', 'El producto completo y terminado', 'El mapa de empatía', 'El documento de requerimientos'],
+        w: 'El prototipo es la versión mínima que permite probar la idea con usuarios reales y aprender antes de invertir en el producto completo. Después viene evaluar.',
+        h: 'Mínimo, pero que permita probar.' }
+    ] }
+] },
+{ id: 'ux4', mat: 'ux', final: true, nombre: 'Unidad 4 · Diseño de interfaz (UI)', desc: 'Grillas, patrones F y Z, jerarquía visual y sistemas de diseño.', temas: [
+  { id: 'ux4m', dif: 'Medio', n: 'Grillas, patrones de lectura y jerarquía',
+    idea: 'La anatomía del maquetado tiene tres capas: la estructura (las grillas definen el espacio), el comportamiento (los patrones explican cómo viaja el ojo) y la jerarquía (la señalización guía hacia la acción).',
+    puntos: [
+      'Patrón F: escaneo en páginas con mucho texto o contenido denso.',
+      'Patrón Z: páginas con poco contenido, orientadas a una acción (CTA).',
+      'Jerarquía: escala, peso visual, agrupación y espacio negativo. "Cuando todo es importante, nada lo es".'
+    ],
+    ojo: 'Las grillas son guías, no religiones: un formulario con un ancho óptimo lleva max-width en pantallas grandes, no porcentajes.',
+    qs: [
+      { t: 'concepto', q: '¿Cuáles son las tres capas de la anatomía del maquetado?', o: ['Estructura (grillas), comportamiento (patrones) y jerarquía (señalización)', 'Color, tipografía e íconos', 'Header, contenido y footer', 'Wireframe, mockup y prototipo'],
+        w: 'Las grillas definen el espacio físico, los patrones explican cómo recorre la mirada y la jerarquía guía al usuario hacia la acción.',
+        h: 'Espacio, mirada y señalización.' },
+      { t: 'concepto', q: 'Diseñás un portal de noticias con mucho texto. ¿Qué patrón de lectura conviene considerar?', o: ['El patrón F', 'El patrón Z', 'El patrón circular', 'Ninguno: en páginas con texto no hay patrón'],
+        w: 'El patrón F aparece en páginas densas: el usuario lee la parte de arriba, baja y escanea el margen izquierdo. Los mapas de calor del Nielsen Norman Group lo muestran. Por eso lo importante va arriba y a la izquierda, como en los diarios.',
+        h: 'Densidad y escaneo.' },
+      { t: 'concepto', q: 'La portada de Facebook va del logo arriba a la izquierda, al formulario de login arriba a la derecha, baja en diagonal y termina en el botón "Crear cuenta". ¿Qué patrón es?', o: ['El patrón Z', 'El patrón F', 'Una grilla de 12 columnas', 'Jerarquía plana'],
+        w: 'El patrón Z sirve en páginas con poco contenido y una acción clara: el ojo recorre en zigzag y termina en la llamada a la acción.',
+        h: 'Seguí el recorrido con el dedo: ¿qué letra dibuja?' },
+      { t: 'concepto', q: 'Una landing pone todo en grande, en negrita y con colores fuertes. ¿Qué le pasa al usuario?', o: ['Percibe ruido y no sabe dónde mirar: cuando todo es importante, nada lo es', 'Encuentra todo más rápido', 'Lee todo con más atención', 'Sigue el patrón F automáticamente'],
+        w: 'La jerarquía visual existe para romper el escaneo monótono y guiar la mirada. Si todos los elementos compiten por la atención, ninguno la consigue.',
+        h: 'Es la regla de oro de la jerarquía visual.' },
+      { t: 'concepto', q: 'Un formulario se estira de punta a punta en un monitor grande y queda incómodo de leer. ¿Qué recomienda el material?', o: ['Usar un ancho máximo fijo (max-width) en pantallas grandes en vez de porcentajes', 'Hacer que siempre ocupe el 100 % de la grilla', 'Agrandar la tipografía hasta llenar el espacio', 'Sacar las columnas de la grilla'],
+        w: '"Las grillas son guías, no religiones." Someter todo a una grilla fluida puede generar errores de usabilidad: un componente con un ancho óptimo tiene que conservarlo.',
+        h: 'Las grillas son guías, no religiones.' },
+      { t: 'concepto', q: '¿Cómo se marca que un elemento es el más importante de la pantalla?', o: ['Con mayor escala y peso visual, mientras la información de apoyo retrocede', 'Poniéndolo al final de la página', 'Con el mismo tamaño que los demás, pero en otro color', 'Agregándole más texto'],
+        w: 'Para definir el orden de lectura se alteran sistemáticamente las variables de relevancia: escala, peso, contraste, agrupación y espacio negativo alrededor.',
+        h: 'Son las variables de la relevancia.' }
+    ] },
+  { id: 'ux4d', dif: 'Difícil', n: 'Sistemas de diseño',
+    idea: 'Un sistema de diseño es una única fuente de verdad que reúne todo lo necesario para diseñar, construir y mantener productos: decisiones visuales (colores, fuentes, espaciados), componentes, guías de uso y código reutilizable.',
+    puntos: [
+      'Objetivo: estandarizar, acelerar la producción, garantizar consistencia y facilitar el handoff entre diseño y desarrollo.',
+      'Material Design (Google, 2014, hoy M3): metáfora del papel y la tinta, grillas adaptativas, elevación y tokens.',
+      'HIG (Apple): claridad, jerarquía, deferencia hacia el contenido. Sistemas públicos: Poncho (Argentina), GOV.UK, USWDS.'
+    ],
+    ojo: 'Un sistema de diseño no es solo una paleta: incluye componentes, reglas de uso y código.',
+    qs: [
+      { t: 'concepto', q: '¿Qué es un sistema de diseño?', o: ['Una única fuente de verdad con decisiones visuales, componentes, guías de uso y código reutilizable', 'Una paleta de colores corporativa', 'Un programa para diseñar como Figma', 'Un documento con la historia de la marca'],
+        w: 'Reúne desde lo más básico (colores, tipografías, espaciados) hasta componentes interactivos, reglas de uso y fragmentos de código. Por eso sirve tanto a diseño como a desarrollo.',
+        h: 'Single source of truth.' },
+      { t: 'concepto', q: '¿Cuál es el objetivo principal de un sistema de diseño?', o: ['Estandarizar el trabajo, acelerar la producción, dar consistencia y facilitar el handoff entre diseño y desarrollo', 'Que todas las apps del mundo se vean iguales', 'Reemplazar a los diseñadores', 'Evitar tener que hacer pruebas con usuarios'],
+        w: 'Industrializa el trabajo: los componentes ya resueltos se reutilizan, los productos de una organización se ven y se comportan de forma consistente, y el pase de diseño a código es más claro.',
+        h: 'Pensá en un equipo grande con muchos productos.' },
+      { t: 'concepto', q: '¿Qué sistema de diseño se basa en la metáfora del papel y la tinta digital, con elevación y tokens?', o: ['Material Design, de Google', 'Human Interface Guidelines, de Apple', 'Poncho, del Gobierno argentino', 'Carbon, de IBM'],
+        w: 'Material Design apareció en 2014 y evolucionó a Material 3. Usa grillas adaptativas, capas con sombras (elevation), animaciones y una estructura de tokens multiplataforma (Android, web, Flutter).',
+        h: 'Es el que usás en tus apps: M3.' },
+      { t: 'concepto', q: '¿Qué caracteriza a las Human Interface Guidelines de Apple?', o: ['La claridad visual, la jerarquía y la deferencia hacia el contenido, con gestos táctiles nativos', 'La metáfora del papel y la tinta', 'Que solo sirven para sitios web', 'Que son un sistema público del gobierno de Estados Unidos'],
+        w: 'Las HIG son los estándares de Apple para iOS, macOS, iPadOS y watchOS. Deferencia significa que la interfaz no compite con el contenido, sino que lo pone en primer plano.',
+        h: 'Es el sistema de Apple.' },
+      { t: 'concepto', q: '¿Qué es Poncho?', o: ['El sistema de estilos y componentes del Gobierno argentino', 'Un plugin de Figma', 'El sistema de diseño de Mercado Libre', 'Una biblioteca de íconos de Google'],
+        w: 'Es un ejemplo de sistema público, como GOV.UK en el Reino Unido o USWDS en Estados Unidos. Se usa en argentina.gob.ar para que todos los sitios del Estado sean consistentes.',
+        h: 'Es de argentina.gob.ar.' },
+      { t: 'concepto', q: '¿Cuál de estas NO es una categoría de componentes de Material Design 3?', o: ['Persuasión', 'Navegación', 'Selección', 'Comunicación'],
+        w: 'M3 organiza sus componentes según su propósito: acción, contención, comunicación, navegación, selección y entrada de texto.',
+        h: 'Son seis categorías según el propósito del componente.' }
+    ] }
+] },
+{ id: 'ux5', mat: 'ux', final: true, nombre: 'Unidad 5 · Prototipado y validación', desc: 'Gestos, selección, estados de interacción y heurísticas de Nielsen.', temas: [
+  { id: 'ux5m', dif: 'Medio', n: 'Gestos, selección y estados',
+    idea: 'En Material Design 3, los gestos son las formas en que las personas interactúan con la interfaz mediante el tacto; los elementos tienen que responder en tiempo real. La selección muestra qué elementos se eligieron, y los estados comunican el estado de interacción de cada componente.',
+    puntos: [
+      'Gestos: tocar, tocar dos veces, desplazarse, deslizar, retroceso predictivo, arrastrar, recoger y trasladar, pellizcar y compuestos.',
+      'Estados: habilitado, deshabilitado, hover, enfocado, presionado y arrastrado.',
+      'Los estados tienen dos indicadores visuales para garantizar la accesibilidad, y se aplican de forma coherente.'
+    ],
+    ojo: 'En barras de navegación y pestañas, el indicador activo marca un solo elemento seleccionado a la vez.',
+    qs: [
+      { t: 'concepto', q: '¿Para qué se usa el gesto de pellizcar?', o: ['Para escalar superficies, como acercar o alejar', 'Para seleccionar varios elementos', 'Para volver a la pantalla anterior', 'Para reordenar una lista'],
+        w: 'Pellizcar escala las superficies. Tocar dos veces también puede acercar o alejar, y los gestos compuestos combinan, por ejemplo, desplazarse y pellizcar en un mapa.',
+        h: 'Pensá en un mapa en el celular.' },
+      { t: 'concepto', q: '¿Qué es el retroceso predictivo de Android?', o: ['Deslizar para volver atrás, pudiendo decidir antes de completar el gesto si se vuelve o se queda', 'Un botón que adivina a dónde querés ir', 'Deshacer la última acción', 'Volver al inicio de la app'],
+        w: 'Mientras desliza, la persona ve la vista anterior y decide si sigue o se queda en la actual. Es un buen ejemplo de control y libertad del usuario.',
+        h: 'Predictivo: muestra antes de completar.' },
+      { t: 'concepto', q: 'Mantenés pulsado un evento del calendario y lo arrastrás a otro día, cambiando su fecha. ¿Qué gesto es?', o: ['Recoger y trasladar', 'Arrastrar', 'Deslizar', 'Tocar dos veces'],
+        w: 'La diferencia con arrastrar es que al recoger y trasladar se modifican las variables del elemento, como la fecha y la hora del evento. Arrastrar solo mueve elementos o hace aparecer y desaparecer superficies.',
+        h: 'El evento cambia de fecha: se modifican sus datos.' },
+      { t: 'concepto', q: 'Un usuario navega con el teclado y resalta un botón con Tab. ¿Qué estado de interacción muestra el botón?', o: ['Enfocado', 'Hover', 'Presionado', 'Arrastrado'],
+        w: 'El estado enfocado comunica que un elemento fue resaltado con el teclado o la voz. Hover es cuando el cursor del mouse está encima, y presionado, cuando se tocó.',
+        h: 'Teclado, no mouse.' },
+      { t: 'concepto', q: '¿Por qué los estados de interacción de M3 usan dos indicadores visuales?', o: ['Para garantizar la accesibilidad: el estado no depende de una sola señal', 'Para que la interfaz se vea más moderna', 'Porque un indicador está reservado para el modo oscuro', 'Para ahorrar código'],
+        w: 'Si el estado se comunicara solo con un cambio de color, quien no distingue ese color no lo percibiría. Es la misma idea del principio Perceptible de las WCAG.',
+        h: 'Conectalo con accesibilidad.' },
+      { t: 'concepto', q: '¿Qué comunica el estado deshabilitado?', o: ['Que el componente existe pero no funciona en este momento', 'Que el componente fue seleccionado', 'Que el cursor está encima', 'Que el componente se está cargando'],
+        w: 'El estado habilitado comunica que el elemento es interactivo; el deshabilitado, que no se puede usar. Visualmente suele mostrarse más apagado.',
+        h: 'Es lo contrario de habilitado.' }
+    ] },
+  { id: 'ux5d', dif: 'Difícil', n: 'Evaluación heurística',
+    idea: 'La evaluación heurística, desarrollada por Jakob Nielsen, es una técnica para encontrar problemas de usabilidad sin participación de usuarios: se analiza la interfaz contra principios llamados heurísticas. Es rápida y económica.',
+    puntos: [
+      '1 Visibilidad del estado · 2 Relación con el mundo real · 3 Control y libertad · 4 Consistencia y estándares · 5 Prevención de errores.',
+      '6 Reconocer antes que recordar · 7 Flexibilidad y eficiencia · 8 Diseño estético y minimalista · 9 Recuperarse de errores · 10 Ayuda y documentación.',
+      'Ley de Jakob: los usuarios pasan la mayor parte de su tiempo en otras interfaces.'
+    ],
+    ojo: 'Minimalista no es poner poco: es mostrar la información necesaria y solo esa.',
+    qs: [
+      { t: 'concepto', q: 'Mientras carga, la app muestra la silueta gris de la página (skeleton screen). ¿Qué heurística aplica?', o: ['#1 Visibilidad del estado del sistema', '#8 Diseño estético y minimalista', '#6 Reconocer antes que recordar', '#10 Ayuda y documentación'],
+        w: 'Mantener al usuario informado de lo que pasa con retroalimentación adecuada y a tiempo. Los indicadores de carga y de progreso son el ejemplo clásico.',
+        h: 'El sistema avisa que está trabajando.' },
+      { t: 'concepto', q: 'Después de borrar un mail aparece un botón "Deshacer". ¿Qué heurística aplica?', o: ['#3 Control y libertad del usuario', '#5 Prevención de errores', '#9 Ayudar a recuperarse de los errores', '#1 Visibilidad del estado del sistema'],
+        w: 'Es una salida de emergencia para una acción no deseada, junto con el botón de cancelar y una señal de salida clara. Prevenir sería evitar el error antes de que ocurra.',
+        h: 'Es una salida de emergencia.' },
+      { t: 'concepto', q: 'Ponés el carrito de compras arriba a la derecha, como en casi todas las tiendas online. ¿Qué heurística aplica?', o: ['#4 Consistencia y estándares, por la Ley de Jakob', '#7 Flexibilidad y eficiencia de uso', '#2 Relación con el mundo real', '#8 Diseño estético y minimalista'],
+        w: 'Los usuarios pasan la mayor parte de su tiempo en otros sitios y esperan que el tuyo funcione igual. Adaptarse a las convenciones reduce lo que tienen que aprender.',
+        h: 'Es lo que el usuario ya conoce de otras tiendas.' },
+      { t: 'concepto', q: 'Un usuario aprieta "Eliminar" en lugar de "Guardar" porque estaba distraído. Según Nielsen, ¿qué tipo de error es?', o: ['Un descuido (slip): un error inconsciente por falta de atención', 'Una equivocación (mistake): un error por un modelo mental distinto', 'Un error del sistema', 'No es un error: es una decisión del usuario'],
+        w: 'Los descuidos son errores inconscientes por falta de atención; las equivocaciones son conscientes y surgen de una diferencia entre el modelo mental del usuario y el diseño. Para prevenirlos se pide confirmación o se separan las acciones peligrosas.',
+        h: 'Estaba distraído: no lo hizo a propósito.' },
+      { t: 'concepto', q: 'El teclado de iOS permite escribir deslizando el dedo sobre las letras, sin que eso complique a quien escribe tocando de a una. ¿Qué heurística es?', o: ['#7 Flexibilidad y eficiencia de uso', '#3 Control y libertad del usuario', '#4 Consistencia y estándares', '#6 Reconocer antes que recordar'],
+        w: 'Es un acelerador: agiliza la tarea para los usuarios expertos sin entorpecer a los novatos. La heurística pide múltiples formas de hacer la misma tarea.',
+        h: 'Un atajo para expertos.' },
+      { t: 'concepto', q: 'La home de HelloBar es muy limpia, pero no explica qué hace la empresa ni qué ofrece. ¿Cumple la heurística #8?', o: ['No: minimalista significa mostrar la información necesaria, y acá falta información importante', 'Sí: cuanto menos contenido, más minimalista', 'Sí, porque tiene mucho espacio en blanco', 'No se puede evaluar sin usuarios'],
+        w: 'El ejemplo de NN/g lo contrapone a 16Personalities, que tiene un estilo cargado pero presenta la información suficiente y solo esa. La heurística no habla de estética vacía, sino de que la información extra no compita con la relevante.',
+        h: 'Minimalismo no es ausencia de información.' }
+    ] }
+] }
+];
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const NIVELES = [...PP, ...UX];
+const TEMAS = NIVELES.flatMap(n => n.temas.map(t => ({...t, final: !!n.final, nivel: n.nombre, mat: n.mat})));
+const tema = id => TEMAS.find(t => t.id === id);
+const pregunta = qid => { const [tid, i] = qid.split('-'); const t = tema(tid); return t && t.qs[+i] ? {...t.qs[+i], qid, tema: t.n} : null; };
+const mezclar = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const dia = (d = new Date()) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+
+/* ---------- resaltado de código ---------- */
+const pintar = linea => {
+  let pre = '', resto = linea;
+  const m = /^(\$ )(.*)$/.exec(linea);
+  if (m) { pre = '<span class="p">$</span> '; resto = m[2]; }
+  let com = '';
+  const c = /(^|\s)(#(?:\s|!|$).*)$/.exec(resto);
+  if (c) { com = `<span class="c">${esc(c[2])}</span>`; resto = resto.slice(0, c.index + c[1].length); }
+  const cuerpo = esc(resto).replace(/(&quot;.*?&quot;|&#39;.*?&#39;)|(&lt;\/?[a-z0-9]+|&gt;)|\b(sudo|if|then|else|elif|fi|for|in|do|done|while|until|echo|git|docker|ssh|chmod|chown|apt|curl|ping|services|image|ports|volumes|restart|display|grid-template-columns|@media)\b/g,
+    (x, str, tag, kw) => `<span class="${str ? 's' : tag ? 'k' : 'n'}">${x}</span>`);
+  return pre + cuerpo + com;
+};
+const codigo = src => `<pre class="code" tabindex="0" aria-label="Código">${src.split('\n').map(l => `<span class="l">${pintar(l) || ' '}</span>`).join('')}</pre>`;
+
+/* ---------- progreso ---------- */
+const CLAVE = 'problema-prototipo-v1';
+let P = {xp: 0, temas: {}, fallos: [], dia: '', racha: 0};
+let ref = null, guardando = Promise.resolve(), nube = false;
+const limpio = d => ({xp: Number(d.xp) || 0, temas: d.temas && typeof d.temas === 'object' ? JSON.parse(JSON.stringify(d.temas)) : {}, fallos: Array.isArray(d.fallos) ? d.fallos.filter(pregunta) : [], dia: d.dia || '', racha: Number(d.racha) || 0});
+function guardar() {
+  try { localStorage.setItem(CLAVE, JSON.stringify(P)); } catch {}
+  if (ref) { const copia = JSON.parse(JSON.stringify(P)); guardando = guardando.then(() => ref.set(copia)).catch(() => {}); }
+}
+async function iniciarGuardado() {
+  try { const raw = localStorage.getItem(CLAVE); if (raw) P = limpio(JSON.parse(raw)); } catch {}
+  render();
+  let db = null;
+  try { db = await window.claude?.use?.('db'); } catch {}
+  if (!db) return;
+  try {
+    ref = db.doc('progreso/jugador');
+    const s = await ref.get();
+    nube = true;
+    if (s.exists) { const d = limpio(s.data()); if (d.xp >= P.xp) P = d; else guardar(); }
+    else if (P.xp) guardar();
+    if (V.pantalla === 'mapa') render();
+  } catch { ref = null; }
+}
+
+/* ---------- estado de la partida ---------- */
+const V = {pantalla: 'mapa', ses: null};
+const estrellas = (n, total = 5) => { const r = n / total; return r >= 1 ? 3 : r >= 0.8 ? 2 : r >= 0.6 ? 1 : 0; };
+const rango = xp => xp >= 600 ? 'Producto validado' : xp >= 300 ? 'Prototipo' : xp >= 100 ? 'Wireframe' : 'Boceto';
+const siguiente = () => TEMAS.find(t => !P.temas[t.id]) || TEMAS.find(t => estrellas(P.temas[t.id].mejor, t.qs.length) < 3) || null;
+
+function empezar(qids, t, titulo) {
+  V.ses = {tema: t || null, titulo: titulo || '', cola: [...qids], total: qids.length, hechas: 0, primer: 0, xp: 0, fallados: [], vistos: {}, actual: null};
+  V.pantalla = t ? 'leccion' : 'pregunta';
+  if (!t) cargarPregunta();
+  render();
+}
+function cargarPregunta() {
+  const s = V.ses, q = pregunta(s.cola[0]);
+  s.actual = {q, ops: mezclar(q.o.map((txt, i) => ({txt, ok: i === 0}))), elegida: null, pista: false, reintento: !!s.vistos[q.qid]};
+}
+function responder(i) {
+  const s = V.ses, a = s.actual;
+  if (!a || a.elegida !== null) return;
+  a.elegida = i;
+  const ok = a.ops[i].ok, qid = a.q.qid;
+  if (ok) {
+    const g = a.reintento ? 4 : a.pista ? 6 : 10;
+    s.xp += g; P.xp += g; s.hechas++;
+    if (!a.reintento) s.primer++;
+    if (!a.reintento) P.fallos = P.fallos.filter(x => x !== qid);
+    s.cola.shift();
+  } else {
+    if (!s.fallados.includes(qid)) s.fallados.push(qid);
+    if (!P.fallos.includes(qid)) P.fallos.push(qid);
+    s.cola.push(s.cola.shift());
+  }
+  s.vistos[qid] = true;
+  guardar(); render();
+  const b = $('#seguir'); if (b) b.focus();
+}
+function avanzar() {
+  const s = V.ses;
+  if (!s.cola.length) return terminar();
+  cargarPregunta(); render();
+}
+function terminar() {
+  const s = V.ses, hoy = dia();
+  if (s.tema) {
+    const prev = P.temas[s.tema.id] || {mejor: 0, veces: 0};
+    P.temas[s.tema.id] = {mejor: Math.max(prev.mejor, s.primer), veces: prev.veces + 1};
+  }
+  if (P.dia !== hoy) {
+    const ayer = new Date(); ayer.setDate(ayer.getDate() - 1);
+    P.racha = P.dia === dia(ayer) ? P.racha + 1 : 1; P.dia = hoy;
+  }
+  guardar(); V.pantalla = 'fin'; render();
+}
+
+/* ---------- pantallas ---------- */
+function cabecera() {
+  const hechos = TEMAS.filter(t => P.temas[t.id]).length;
+  return `<header class="bar-top"><a class="volver" href="../">← Todos los juegos</a><h1 class="logo">problema <i>→</i> prototipo</h1>
+    <div class="kpis"><span class="kpi"><b>${P.xp}</b> XP · ${rango(P.xp)}</span><span class="kpi"><b>${P.racha}</b> ${P.racha === 1 ? 'día seguido' : 'días seguidos'}</span><span class="kpi"><b>${hechos}</b> de ${TEMAS.length} temas</span></div></header>`;
+}
+function tarjeta(t, sig, num) {
+  const p = P.temas[t.id], tot = t.qs.length, e = p ? estrellas(p.mejor, tot) : 0;
+  return `<button class="tema${sig && sig.id === t.id ? ' sig' : ''}" type="button" data-tema="${t.id}">
+    <span class="num">${esc(t.dif)}</span><span class="nom">${esc(t.n)}</span>
+    <span class="est">${p ? `<b aria-hidden="true">${'★'.repeat(e)}${'☆'.repeat(3 - e)}</b><br>Mejor: ${p.mejor} de ${tot} a la primera` : `${tot} desafíos · sin jugar`}</span></button>`;
+}
+const MATERIAS = {
+  pp: { nombre: 'Prácticas Profesionalizantes I', desc: 'Del problema a la especificación: resolución de problemas, actores y casos de uso, requerimientos, historias de usuario y Product Backlog.' },
+  ux: { nombre: 'Diseño UX/UI', desc: 'Del usuario a la interfaz: usabilidad, investigación, accesibilidad, maquetado, sistemas de diseño y heurísticas.' }
+};
+const RUTA = [['pp', 'Problema'], ['pp', 'Actores y casos de uso'], ['pp', 'RF y RNF'], ['pp', 'Historias de usuario'], ['pp', 'Backlog'], ['ux', 'User flow'], ['ux', 'Wireframe'], ['ux', 'Prototipo'], ['ux', 'Heurísticas']];
+function mapa() {
+  const sig = siguiente(), nf = P.fallos.length;
+  const bloque = N => `<section class="nivel">
+    <div class="nivel-head"><h3>${esc(N.nombre)}</h3><span>${esc(N.desc)}</span></div>
+    <div class="temas">${N.temas.map(t => tarjeta(t, sig, '')).join('')}</div></section>`;
+  const seccion = m => `<div class="seccion ${m}"><h2>${MATERIAS[m].nombre}</h2><p>${MATERIAS[m].desc}</p>
+      <button class="btn sec" type="button" data-act="simulacro" data-mat="${m}">Simulacro de ${m === 'pp' ? 'Prácticas' : 'Diseño'}</button></div>
+    ${NIVELES.filter(N => N.mat === m).map(bloque).join('')}`;
+  return `${cabecera()}
+  <section class="hero">
+    <div>
+      <h2>Entendé el problema antes de diseñar la pantalla.</h2>
+      <p>${sig ? `${P.temas[sig.id] ? 'Te conviene repetir' : 'Seguís con'}: <b>${esc(sig.n)}</b>, bloque ${sig.dif.toLowerCase()} (${esc(MATERIAS[sig.mat].nombre)}).` : 'Completaste todos los bloques con tres estrellas. Podés repetir cualquiera para mantenerlos frescos.'}</p>
+      <div class="cta">
+        ${sig ? `<button class="btn" type="button" data-tema="${sig.id}">${P.xp ? 'Seguir jugando' : 'Empezar'}</button>` : ''}
+        <button class="btn ghost" type="button" data-act="repaso" ${nf ? '' : 'disabled'}>${nf ? `Repasar mis errores (${nf})` : 'Sin errores para repasar'}</button>
+      </div>
+    </div>
+    <ol class="ruta" aria-label="Recorrido de las dos materias">${RUTA.map(([m, x]) => `<li class="${m}">${x}</li>`).join('')}</ol>
+  </section>
+  ${seccion('pp')}
+  ${seccion('ux')}
+  <p class="nota">Tres estrellas = todos los desafíos del bloque resueltos al primer intento. Cuando fallás una pregunta, vuelve a aparecer hasta que la resolvés. ${nube ? 'Tu progreso se guarda en tu cuenta.' : 'Tu progreso se guarda en este navegador.'}</p>`;
+}
+function leccion() {
+  const t = V.ses.tema;
+  return `<div class="fila"><button class="btn link" type="button" data-act="salir">← Volver al mapa</button><span class="eyebrow">${esc(t.nivel)}${t.dif ? ' · ' + t.dif : ''}</span></div>
+  <article class="card">
+    <p class="eyebrow">Antes de jugar</p>
+    <h2>${esc(t.n)}</h2>
+    <p>${esc(t.idea)}</p>
+    ${t.puntos ? `<ul class="puntos">${t.puntos.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+    ${t.ej ? codigo(t.ej) : ''}
+    <div class="ojo"><b>Error frecuente.</b> ${esc(t.ojo)}</div>
+    <div class="fila"><span class="nota">Vienen ${t.qs.length} desafíos sobre este tema.</span><button class="btn" type="button" data-act="jugar" id="seguir">Empezar los desafíos</button></div>
+  </article>`;
+}
+function pantallaPregunta() {
+  const s = V.ses, a = s.actual, q = a.q, resp = a.elegida !== null, ok = resp && a.ops[a.elegida].ok;
+  const titulo = q.q || '¿Cuál es la respuesta correcta?';
+  return `<div class="fila"><button class="btn link" type="button" data-act="salir">← Salir</button>
+    <div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="${s.total}" aria-valuenow="${s.hechas}" aria-label="Desafíos resueltos"><i style="width:${Math.round(s.hechas / s.total * 100)}%"></i></div>
+    <span class="kpi">${s.hechas} de ${s.total}</span></div>
+  <article class="card">
+    <p class="eyebrow">${esc(s.tema ? s.tema.n : s.titulo + ' · ' + q.tema)}${a.reintento ? ' · segundo intento' : ''}</p>
+    <h2 class="q">${esc(titulo)}</h2>
+    ${q.s ? `<p class="sit">${esc(q.s)}</p>` : ''}
+    ${q.c ? codigo(q.c) : ''}
+    ${q.tabla ? `<div class="traza"><table><caption>Prueba de escritorio</caption><thead><tr>${q.tabla.cols.map(c => `<th scope="col">${esc(c)}</th>`).join('')}</tr></thead><tbody>${q.tabla.filas.map(f => `<tr>${f.map(c => `<td${c === '?' ? ' class="hueco"' : ''}>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : ''}
+    <div class="ops" role="group" aria-label="Opciones">${a.ops.map((o, i) => {
+      const cls = resp ? (o.ok ? ' ok' : i === a.elegida ? ' mal' : '') : '';
+      const marca = resp ? (o.ok ? '<span class="marca">✓ Correcta</span>' : i === a.elegida ? '<span class="marca">✕ Tu respuesta</span>' : '') : '';
+      return `<button class="op${q.t === 'salida' || q.t === 'sigue' ? ' mono' : ''}${cls}" type="button" data-op="${i}" ${resp ? 'disabled' : ''}><kbd>${i + 1}</kbd><span>${esc(o.txt)}</span>${marca}</button>`; }).join('')}</div>
+    ${!resp ? (a.pista ? `<div class="pista"><b>Pista.</b> ${esc(q.h)}</div>` : `<div class="fila"><button class="btn link" type="button" data-act="pista">Pedir una pista</button><span class="nota">Con pista sumás 6 XP en vez de 10.</span></div>`) : ''}
+    ${resp ? `<div class="fb${ok ? '' : ' mal'}" role="status"><strong>${ok ? (a.reintento ? 'Ahora sí.' : 'Correcto.') : 'No era esa.'}</strong><p>${esc(q.w)}</p>${ok ? '' : '<p style="margin-top:8px">Esta pregunta vuelve al final para que la intentes de nuevo.</p>'}</div>
+      <div class="fila"><span class="nota">${ok ? `+${a.reintento ? 4 : a.pista ? 6 : 10} XP` : ''}</span><button class="btn" type="button" data-act="seguir" id="seguir">${s.cola.length ? 'Siguiente' : 'Ver resultado'}</button></div>` : ''}
+  </article>`;
+}
+function fin() {
+  const s = V.ses, t = s.tema, e = estrellas(s.primer, s.total);
+  const prox = t ? (TEMAS[TEMAS.findIndex(x => x.id === t.id) + 1] || null) : null;
+  return `${cabecera()}
+  <article class="card">
+    <p class="eyebrow">${esc(t ? t.n : s.titulo)}</p>
+    <h2>${s.primer === s.total ? 'Todo bien al primer intento.' : s.primer >= s.total / 2 ? 'Terminado.' : 'Terminado. Este conviene repetirlo.'}</h2>
+    <div class="fila" style="justify-content:flex-start;gap:24px">
+      <div><div class="resumen-n">${s.primer}/${s.total}</div><span class="nota">a la primera</span></div>
+      <div><div class="resumen-n">+${s.xp}</div><span class="nota">XP ganados</span></div>
+      ${t ? `<div><div class="estrellas" aria-label="${e} de 3 estrellas">${'★'.repeat(e)}${'☆'.repeat(3 - e)}</div><span class="nota">en esta partida</span></div>` : ''}
+    </div>
+    ${s.fallados.length ? `<div><p style="font-weight:700;margin-bottom:8px">Lo que te costó en esta partida</p><ul class="rep">${s.fallados.map(id => { const q = pregunta(id); return `<li>${esc(q.w)}</li>`; }).join('')}</ul></div>` : ''}
+    <div class="cta">
+      ${prox ? `<button class="btn" type="button" data-tema="${prox.id}" id="seguir">Siguiente tema: ${esc(prox.n)}</button>` : ''}
+      ${t && e < 3 ? `<button class="btn sec" type="button" data-tema="${t.id}">Repetir este tema</button>` : ''}
+      <button class="btn sec" type="button" data-act="salir" ${prox ? '' : 'id="seguir"'}>Volver al mapa</button>
+    </div>
+  </article>`;
+}
+function render() {
+  $('#app').innerHTML = V.pantalla === 'leccion' ? leccion() : V.pantalla === 'pregunta' ? pantallaPregunta() : V.pantalla === 'fin' ? fin() : mapa();
+}
+function ir(p) { V.pantalla = p; render(); window.scrollTo(0, 0); }
+
+/* ---------- eventos ---------- */
+document.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || b.disabled) return;
+  if (b.dataset.tema) { const t = tema(b.dataset.tema); empezar(t.qs.map((_, i) => t.id + '-' + i), t); window.scrollTo(0, 0); return; }
+  if (b.dataset.op) return responder(+b.dataset.op);
+  const a = b.dataset.act;
+  if (a === 'salir') { V.ses = null; ir('mapa'); }
+  if (a === 'jugar') { cargarPregunta(); ir('pregunta'); }
+  if (a === 'pista') { V.ses.actual.pista = true; render(); }
+  if (a === 'seguir') { avanzar(); window.scrollTo(0, 0); }
+  if (a === 'repaso') { empezar(mezclar(P.fallos).slice(0, 8), null, 'Repaso de errores'); window.scrollTo(0, 0); }
+  if (a === 'simulacro') {
+    const m = b.dataset.mat;
+    const bolsa = TEMAS.filter(t => t.mat === m).flatMap(t => t.qs.map((_, i) => t.id + '-' + i));
+    empezar(mezclar(bolsa).slice(0, 10), null, 'Simulacro de ' + (m === 'pp' ? 'Prácticas' : 'Diseño')); window.scrollTo(0, 0);
+  }
+});
+document.addEventListener('keydown', e => {
+  if (V.pantalla !== 'pregunta' || e.ctrlKey || e.metaKey || e.altKey) return;
+  const a = V.ses.actual, n = parseInt(e.key, 10);
+  if (a.elegida === null && n >= 1 && n <= a.ops.length) { e.preventDefault(); responder(n - 1); }
+});
+iniciarGuardado();
+</script>
+</body>
+</html>
