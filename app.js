@@ -105,3 +105,44 @@ function render() {
 render();
 // Al volver desde un juego con el botón Atrás, actualiza el progreso.
 window.addEventListener('pageshow', render);
+
+// ---------- Instalación como app (PWA) ----------
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+
+const caja = document.getElementById('instalar');
+const boton = document.getElementById('btn-instalar');
+const ayuda = document.getElementById('ayuda-instalar');
+const yaInstalada = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+const esIPhone = /iphone|ipad|ipod/i.test(navigator.userAgent);
+let pedidoInstalacion = null;
+
+// Android y Chrome: el navegador avisa que se puede instalar y mostramos el botón.
+window.addEventListener('beforeinstallprompt', evento => {
+  evento.preventDefault();
+  pedidoInstalacion = evento;
+  if (!yaInstalada) {
+    caja.hidden = false;
+    boton.hidden = false;
+  }
+});
+
+boton.addEventListener('click', async () => {
+  if (!pedidoInstalacion) return;
+  pedidoInstalacion.prompt();
+  await pedidoInstalacion.userChoice;
+  pedidoInstalacion = null;
+  boton.hidden = true;
+});
+
+window.addEventListener('appinstalled', () => {
+  caja.hidden = true;
+});
+
+// iPhone: Safari no tiene botón de instalar, así que explicamos cómo hacerlo.
+if (esIPhone && !yaInstalada) {
+  caja.hidden = false;
+  ayuda.hidden = false;
+  ayuda.textContent = 'Para instalarla en el iPhone: tocá Compartir en Safari y elegí "Agregar a inicio".';
+}

@@ -14,13 +14,17 @@ Desde la portada se elige el juego. Cada uno tiene bloques por unidad, con una m
 
 - HTML5, CSS3 y JavaScript, sin frameworks ni dependencias.
 - `localStorage` para guardar el progreso de cada juego en el navegador.
+- PWA: `manifest.webmanifest` y un service worker (`sw.js`) para instalarla en el celular y jugar sin conexión.
 
 ## Estructura
 
 ```
 index.html              portada: elegir juego y ver el progreso
 styles.css              estilos de la portada
-app.js                  catálogo de juegos y lectura del progreso
+app.js                  catálogo de juegos, progreso y botón de instalación
+manifest.webmanifest    datos de la app instalable (nombre, íconos, colores)
+sw.js                   service worker: guarda los archivos para usar sin conexión
+icons/                  íconos de la app
 bucle/                  Bucle JS
 terminal-lab/           Terminal Lab
 problema-prototipo/     Del problema al prototipo
@@ -30,7 +34,14 @@ Para agregar un juego nuevo: crear su carpeta con un `index.html` y sumar un obj
 
 ## Cómo verlo
 
-Publicado con GitHub Pages. Para probarlo en local, abrir `index.html` en el navegador.
+Publicado con GitHub Pages. Para probarlo en local, abrir `index.html` en el navegador (la instalación y el modo sin conexión solo funcionan servidos por HTTPS o desde `localhost`).
+
+## Instalar en el celular
+
+- **Android (Chrome):** abrir la página y tocar **Instalar en el celular**, o el menú ⋮ → **Instalar app**.
+- **iPhone (Safari):** tocar **Compartir** → **Agregar a inicio**.
+
+Al cambiar archivos, subir el número de `VERSION` en `sw.js` para que el celular descargue la versión nueva.
 
 ## Autor
 
