@@ -136,6 +136,14 @@ button{font:inherit;color:inherit;cursor:pointer}
 }
 .volver{flex-basis:100%;font-weight:700;font-size:.9rem;color:var(--muted);text-decoration:none;padding:6px 0;min-height:32px}
 .volver:hover{color:var(--ink);text-decoration:underline}
+
+/* Ajustes de revisión visual */
+.temas{grid-template-columns:repeat(auto-fit,minmax(165px,1fr))}
+.op{flex-wrap:wrap}
+.op span:not(.marca){flex:1;min-width:0}
+@media (max-width:560px){ .op .marca{flex-basis:100%;margin-left:36px;order:3} }
+@media (min-width:680px){ .hero{grid-template-columns:1.15fr 1fr} }
+.hero .code{font-size:.78rem}
 </style>
 </head>
 <body>
@@ -627,15 +635,15 @@ const dia = (d = new Date()) => d.getFullYear() + '-' + String(d.getMonth() + 1)
 const pintar = linea => {
   let pre = '', resto = linea;
   const m = /^(\$ )(.*)$/.exec(linea);
-  if (m) { pre = '<span class="p">$</span> '; resto = m[2]; }
+  if (m) { pre = '<span class="p">$<\/span> '; resto = m[2]; }
   let com = '';
   const c = /(^|\s)(#(?:\s|!|$).*)$/.exec(resto);
-  if (c) { com = `<span class="c">${esc(c[2])}</span>`; resto = resto.slice(0, c.index + c[1].length); }
+  if (c) { com = `<span class="c">${esc(c[2])}<\/span>`; resto = resto.slice(0, c.index + c[1].length); }
   const cuerpo = esc(resto).replace(/(&quot;.*?&quot;|&#39;.*?&#39;)|(&lt;\/?[a-z0-9]+|&gt;)|\b(sudo|if|then|else|elif|fi|for|in|do|done|while|until|echo|git|docker|ssh|chmod|chown|apt|curl|ping|services|image|ports|volumes|restart|display|grid-template-columns|@media)\b/g,
-    (x, str, tag, kw) => `<span class="${str ? 's' : tag ? 'k' : 'n'}">${x}</span>`);
+    (x, str, tag, kw) => `<span class="${str ? 's' : tag ? 'k' : 'n'}">${x}<\/span>`);
   return pre + cuerpo + com;
 };
-const codigo = src => `<pre class="code" tabindex="0" aria-label="Código">${src.split('\n').map(l => `<span class="l">${pintar(l) || ' '}</span>`).join('')}</pre>`;
+const codigo = src => `<pre class="code" tabindex="0" aria-label="Código">${src.split('\n').map(l => `<span class="l">${pintar(l) || ' '}<\/span>`).join('')}<\/pre>`;
 
 /* ---------- progreso ---------- */
 const CLAVE = 'problema-prototipo-v1';
@@ -719,14 +727,14 @@ function terminar() {
 /* ---------- pantallas ---------- */
 function cabecera() {
   const hechos = TEMAS.filter(t => P.temas[t.id]).length;
-  return `<header class="bar-top"><a class="volver" href="../">← Todos los juegos</a><h1 class="logo">problema <i>→</i> prototipo</h1>
-    <div class="kpis"><span class="kpi"><b>${P.xp}</b> XP · ${rango(P.xp)}</span><span class="kpi"><b>${P.racha}</b> ${P.racha === 1 ? 'día seguido' : 'días seguidos'}</span><span class="kpi"><b>${hechos}</b> de ${TEMAS.length} temas</span></div></header>`;
+  return `<header class="bar-top"><a class="volver" href="../">← Todos los juegos<\/a><h1 class="logo">problema <i>→<\/i> prototipo<\/h1>
+    <div class="kpis"><span class="kpi"><b>${P.xp}<\/b> XP · ${rango(P.xp)}<\/span><span class="kpi"><b>${P.racha}<\/b> ${P.racha === 1 ? 'día seguido' : 'días seguidos'}<\/span><span class="kpi"><b>${hechos}<\/b> de ${TEMAS.length} temas<\/span><\/div><\/header>`;
 }
 function tarjeta(t, sig, num) {
   const p = P.temas[t.id], tot = t.qs.length, e = p ? estrellas(p.mejor, tot) : 0;
   return `<button class="tema${sig && sig.id === t.id ? ' sig' : ''}" type="button" data-tema="${t.id}">
-    <span class="num">${esc(t.dif)}</span><span class="nom">${esc(t.n)}</span>
-    <span class="est">${p ? `<b aria-hidden="true">${'★'.repeat(e)}${'☆'.repeat(3 - e)}</b><br>Mejor: ${p.mejor} de ${tot} a la primera` : `${tot} desafíos · sin jugar`}</span></button>`;
+    <span class="num">${esc(t.dif)}<\/span><span class="nom">${esc(t.n)}<\/span>
+    <span class="est">${p ? `<b aria-hidden="true">${'★'.repeat(e)}${'☆'.repeat(3 - e)}<\/b><br>Mejor: ${p.mejor} de ${tot} a la primera` : `${tot} desafíos · sin jugar`}<\/span><\/button>`;
 }
 const MATERIAS = {
   pp: { nombre: 'Prácticas Profesionalizantes I', desc: 'Del problema a la especificación: resolución de problemas, actores y casos de uso, requerimientos, historias de usuario y Product Backlog.' },
@@ -736,80 +744,80 @@ const RUTA = [['pp', 'Problema'], ['pp', 'Actores y casos de uso'], ['pp', 'RF y
 function mapa() {
   const sig = siguiente(), nf = P.fallos.length;
   const bloque = N => `<section class="nivel">
-    <div class="nivel-head"><h3>${esc(N.nombre)}</h3><span>${esc(N.desc)}</span></div>
-    <div class="temas">${N.temas.map(t => tarjeta(t, sig, '')).join('')}</div></section>`;
-  const seccion = m => `<div class="seccion ${m}"><h2>${MATERIAS[m].nombre}</h2><p>${MATERIAS[m].desc}</p>
-      <button class="btn sec" type="button" data-act="simulacro" data-mat="${m}">Simulacro de ${m === 'pp' ? 'Prácticas' : 'Diseño'}</button></div>
+    <div class="nivel-head"><h3>${esc(N.nombre)}<\/h3><span>${esc(N.desc)}<\/span><\/div>
+    <div class="temas">${N.temas.map(t => tarjeta(t, sig, '')).join('')}<\/div><\/section>`;
+  const seccion = m => `<div class="seccion ${m}"><h2>${MATERIAS[m].nombre}<\/h2><p>${MATERIAS[m].desc}<\/p>
+      <button class="btn sec" type="button" data-act="simulacro" data-mat="${m}">Simulacro de ${m === 'pp' ? 'Prácticas' : 'Diseño'}<\/button><\/div>
     ${NIVELES.filter(N => N.mat === m).map(bloque).join('')}`;
   return `${cabecera()}
   <section class="hero">
     <div>
-      <h2>Entendé el problema antes de diseñar la pantalla.</h2>
-      <p>${sig ? `${P.temas[sig.id] ? 'Te conviene repetir' : 'Seguís con'}: <b>${esc(sig.n)}</b>, bloque ${sig.dif.toLowerCase()} (${esc(MATERIAS[sig.mat].nombre)}).` : 'Completaste todos los bloques con tres estrellas. Podés repetir cualquiera para mantenerlos frescos.'}</p>
+      <h2>Entendé el problema antes de diseñar la pantalla.<\/h2>
+      <p>${sig ? `${P.temas[sig.id] ? 'Te conviene repetir' : 'Seguís con'}: <b>${esc(sig.n)}<\/b>, bloque ${sig.dif.toLowerCase()} (${esc(MATERIAS[sig.mat].nombre)}).` : 'Completaste todos los bloques con tres estrellas. Podés repetir cualquiera para mantenerlos frescos.'}<\/p>
       <div class="cta">
-        ${sig ? `<button class="btn" type="button" data-tema="${sig.id}">${P.xp ? 'Seguir jugando' : 'Empezar'}</button>` : ''}
-        <button class="btn ghost" type="button" data-act="repaso" ${nf ? '' : 'disabled'}>${nf ? `Repasar mis errores (${nf})` : 'Sin errores para repasar'}</button>
-      </div>
-    </div>
-    <ol class="ruta" aria-label="Recorrido de las dos materias">${RUTA.map(([m, x]) => `<li class="${m}">${x}</li>`).join('')}</ol>
-  </section>
+        ${sig ? `<button class="btn" type="button" data-tema="${sig.id}">${P.xp ? 'Seguir jugando' : 'Empezar'}<\/button>` : ''}
+        <button class="btn ghost" type="button" data-act="repaso" ${nf ? '' : 'disabled'}>${nf ? `Repasar mis errores (${nf})` : 'Sin errores para repasar'}<\/button>
+      <\/div>
+    <\/div>
+    <ol class="ruta" aria-label="Recorrido de las dos materias">${RUTA.map(([m, x]) => `<li class="${m}">${x}<\/li>`).join('')}<\/ol>
+  <\/section>
   ${seccion('pp')}
   ${seccion('ux')}
-  <p class="nota">Tres estrellas = todos los desafíos del bloque resueltos al primer intento. Cuando fallás una pregunta, vuelve a aparecer hasta que la resolvés. ${nube ? 'Tu progreso se guarda en tu cuenta.' : 'Tu progreso se guarda en este navegador.'}</p>`;
+  <p class="nota">Tres estrellas = todos los desafíos del bloque resueltos al primer intento. Cuando fallás una pregunta, vuelve a aparecer hasta que la resolvés. ${nube ? 'Tu progreso se guarda en tu cuenta.' : 'Tu progreso se guarda en este navegador.'}<\/p>`;
 }
 function leccion() {
   const t = V.ses.tema;
-  return `<div class="fila"><button class="btn link" type="button" data-act="salir">← Volver al mapa</button><span class="eyebrow">${esc(t.nivel)}${t.dif ? ' · ' + t.dif : ''}</span></div>
+  return `<div class="fila"><button class="btn link" type="button" data-act="salir">← Volver al mapa<\/button><span class="eyebrow">${esc(t.nivel)}${t.dif ? ' · ' + t.dif : ''}<\/span><\/div>
   <article class="card">
-    <p class="eyebrow">Antes de jugar</p>
-    <h2>${esc(t.n)}</h2>
-    <p>${esc(t.idea)}</p>
-    ${t.puntos ? `<ul class="puntos">${t.puntos.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+    <p class="eyebrow">Antes de jugar<\/p>
+    <h2>${esc(t.n)}<\/h2>
+    <p>${esc(t.idea)}<\/p>
+    ${t.puntos ? `<ul class="puntos">${t.puntos.map(x => `<li>${esc(x)}<\/li>`).join('')}<\/ul>` : ''}
     ${t.ej ? codigo(t.ej) : ''}
-    <div class="ojo"><b>Error frecuente.</b> ${esc(t.ojo)}</div>
-    <div class="fila"><span class="nota">Vienen ${t.qs.length} desafíos sobre este tema.</span><button class="btn" type="button" data-act="jugar" id="seguir">Empezar los desafíos</button></div>
-  </article>`;
+    <div class="ojo"><b>Error frecuente.<\/b> ${esc(t.ojo)}<\/div>
+    <div class="fila"><span class="nota">Vienen ${t.qs.length} desafíos sobre este tema.<\/span><button class="btn" type="button" data-act="jugar" id="seguir">Empezar los desafíos<\/button><\/div>
+  <\/article>`;
 }
 function pantallaPregunta() {
   const s = V.ses, a = s.actual, q = a.q, resp = a.elegida !== null, ok = resp && a.ops[a.elegida].ok;
   const titulo = q.q || '¿Cuál es la respuesta correcta?';
-  return `<div class="fila"><button class="btn link" type="button" data-act="salir">← Salir</button>
-    <div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="${s.total}" aria-valuenow="${s.hechas}" aria-label="Desafíos resueltos"><i style="width:${Math.round(s.hechas / s.total * 100)}%"></i></div>
-    <span class="kpi">${s.hechas} de ${s.total}</span></div>
+  return `<div class="fila"><button class="btn link" type="button" data-act="salir">← Salir<\/button>
+    <div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="${s.total}" aria-valuenow="${s.hechas}" aria-label="Desafíos resueltos"><i style="width:${Math.round(s.hechas / s.total * 100)}%"><\/i><\/div>
+    <span class="kpi">${s.hechas} de ${s.total}<\/span><\/div>
   <article class="card">
-    <p class="eyebrow">${esc(s.tema ? s.tema.n : s.titulo + ' · ' + q.tema)}${a.reintento ? ' · segundo intento' : ''}</p>
-    <h2 class="q">${esc(titulo)}</h2>
-    ${q.s ? `<p class="sit">${esc(q.s)}</p>` : ''}
+    <p class="eyebrow">${esc(s.tema ? s.tema.n : s.titulo + ' · ' + q.tema)}${a.reintento ? ' · segundo intento' : ''}<\/p>
+    <h2 class="q">${esc(titulo)}<\/h2>
+    ${q.s ? `<p class="sit">${esc(q.s)}<\/p>` : ''}
     ${q.c ? codigo(q.c) : ''}
-    ${q.tabla ? `<div class="traza"><table><caption>Prueba de escritorio</caption><thead><tr>${q.tabla.cols.map(c => `<th scope="col">${esc(c)}</th>`).join('')}</tr></thead><tbody>${q.tabla.filas.map(f => `<tr>${f.map(c => `<td${c === '?' ? ' class="hueco"' : ''}>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : ''}
+    ${q.tabla ? `<div class="traza"><table><caption>Prueba de escritorio<\/caption><thead><tr>${q.tabla.cols.map(c => `<th scope="col">${esc(c)}<\/th>`).join('')}<\/tr><\/thead><tbody>${q.tabla.filas.map(f => `<tr>${f.map(c => `<td${c === '?' ? ' class="hueco"' : ''}>${esc(c)}<\/td>`).join('')}<\/tr>`).join('')}<\/tbody><\/table><\/div>` : ''}
     <div class="ops" role="group" aria-label="Opciones">${a.ops.map((o, i) => {
       const cls = resp ? (o.ok ? ' ok' : i === a.elegida ? ' mal' : '') : '';
-      const marca = resp ? (o.ok ? '<span class="marca">✓ Correcta</span>' : i === a.elegida ? '<span class="marca">✕ Tu respuesta</span>' : '') : '';
-      return `<button class="op${q.t === 'salida' || q.t === 'sigue' ? ' mono' : ''}${cls}" type="button" data-op="${i}" ${resp ? 'disabled' : ''}><kbd>${i + 1}</kbd><span>${esc(o.txt)}</span>${marca}</button>`; }).join('')}</div>
-    ${!resp ? (a.pista ? `<div class="pista"><b>Pista.</b> ${esc(q.h)}</div>` : `<div class="fila"><button class="btn link" type="button" data-act="pista">Pedir una pista</button><span class="nota">Con pista sumás 6 XP en vez de 10.</span></div>`) : ''}
-    ${resp ? `<div class="fb${ok ? '' : ' mal'}" role="status"><strong>${ok ? (a.reintento ? 'Ahora sí.' : 'Correcto.') : 'No era esa.'}</strong><p>${esc(q.w)}</p>${ok ? '' : '<p style="margin-top:8px">Esta pregunta vuelve al final para que la intentes de nuevo.</p>'}</div>
-      <div class="fila"><span class="nota">${ok ? `+${a.reintento ? 4 : a.pista ? 6 : 10} XP` : ''}</span><button class="btn" type="button" data-act="seguir" id="seguir">${s.cola.length ? 'Siguiente' : 'Ver resultado'}</button></div>` : ''}
-  </article>`;
+      const marca = resp ? (o.ok ? '<span class="marca">✓ Correcta<\/span>' : i === a.elegida ? '<span class="marca">✕ Tu respuesta<\/span>' : '') : '';
+      return `<button class="op${q.t === 'salida' || q.t === 'sigue' ? ' mono' : ''}${cls}" type="button" data-op="${i}" ${resp ? 'disabled' : ''}><kbd>${i + 1}<\/kbd><span>${esc(o.txt)}<\/span>${marca}<\/button>`; }).join('')}<\/div>
+    ${!resp ? (a.pista ? `<div class="pista"><b>Pista.<\/b> ${esc(q.h)}<\/div>` : `<div class="fila"><button class="btn link" type="button" data-act="pista">Pedir una pista<\/button><span class="nota">Con pista sumás 6 XP en vez de 10.<\/span><\/div>`) : ''}
+    ${resp ? `<div class="fb${ok ? '' : ' mal'}" role="status"><strong>${ok ? (a.reintento ? 'Ahora sí.' : 'Correcto.') : 'No era esa.'}<\/strong><p>${esc(q.w)}<\/p>${ok ? '' : '<p style="margin-top:8px">Esta pregunta vuelve al final para que la intentes de nuevo.<\/p>'}<\/div>
+      <div class="fila"><span class="nota">${ok ? `+${a.reintento ? 4 : a.pista ? 6 : 10} XP` : ''}<\/span><button class="btn" type="button" data-act="seguir" id="seguir">${s.cola.length ? 'Siguiente' : 'Ver resultado'}<\/button><\/div>` : ''}
+  <\/article>`;
 }
 function fin() {
   const s = V.ses, t = s.tema, e = estrellas(s.primer, s.total);
   const prox = t ? (TEMAS[TEMAS.findIndex(x => x.id === t.id) + 1] || null) : null;
   return `${cabecera()}
   <article class="card">
-    <p class="eyebrow">${esc(t ? t.n : s.titulo)}</p>
-    <h2>${s.primer === s.total ? 'Todo bien al primer intento.' : s.primer >= s.total / 2 ? 'Terminado.' : 'Terminado. Este conviene repetirlo.'}</h2>
+    <p class="eyebrow">${esc(t ? t.n : s.titulo)}<\/p>
+    <h2>${s.primer === s.total ? 'Todo bien al primer intento.' : s.primer >= s.total / 2 ? 'Terminado.' : 'Terminado. Este conviene repetirlo.'}<\/h2>
     <div class="fila" style="justify-content:flex-start;gap:24px">
-      <div><div class="resumen-n">${s.primer}/${s.total}</div><span class="nota">a la primera</span></div>
-      <div><div class="resumen-n">+${s.xp}</div><span class="nota">XP ganados</span></div>
-      ${t ? `<div><div class="estrellas" aria-label="${e} de 3 estrellas">${'★'.repeat(e)}${'☆'.repeat(3 - e)}</div><span class="nota">en esta partida</span></div>` : ''}
-    </div>
-    ${s.fallados.length ? `<div><p style="font-weight:700;margin-bottom:8px">Lo que te costó en esta partida</p><ul class="rep">${s.fallados.map(id => { const q = pregunta(id); return `<li>${esc(q.w)}</li>`; }).join('')}</ul></div>` : ''}
+      <div><div class="resumen-n">${s.primer}/${s.total}<\/div><span class="nota">a la primera<\/span><\/div>
+      <div><div class="resumen-n">+${s.xp}<\/div><span class="nota">XP ganados<\/span><\/div>
+      ${t ? `<div><div class="estrellas" aria-label="${e} de 3 estrellas">${'★'.repeat(e)}${'☆'.repeat(3 - e)}<\/div><span class="nota">en esta partida<\/span><\/div>` : ''}
+    <\/div>
+    ${s.fallados.length ? `<div><p style="font-weight:700;margin-bottom:8px">Lo que te costó en esta partida<\/p><ul class="rep">${s.fallados.map(id => { const q = pregunta(id); return `<li>${esc(q.w)}<\/li>`; }).join('')}<\/ul><\/div>` : ''}
     <div class="cta">
-      ${prox ? `<button class="btn" type="button" data-tema="${prox.id}" id="seguir">Siguiente tema: ${esc(prox.n)}</button>` : ''}
-      ${t && e < 3 ? `<button class="btn sec" type="button" data-tema="${t.id}">Repetir este tema</button>` : ''}
-      <button class="btn sec" type="button" data-act="salir" ${prox ? '' : 'id="seguir"'}>Volver al mapa</button>
-    </div>
-  </article>`;
+      ${prox ? `<button class="btn" type="button" data-tema="${prox.id}" id="seguir">Siguiente tema: ${esc(prox.n)}<\/button>` : ''}
+      ${t && e < 3 ? `<button class="btn sec" type="button" data-tema="${t.id}">Repetir este tema<\/button>` : ''}
+      <button class="btn sec" type="button" data-act="salir" ${prox ? '' : 'id="seguir"'}>Volver al mapa<\/button>
+    <\/div>
+  <\/article>`;
 }
 function render() {
   $('#app').innerHTML = V.pantalla === 'leccion' ? leccion() : V.pantalla === 'pregunta' ? pantallaPregunta() : V.pantalla === 'fin' ? fin() : mapa();
